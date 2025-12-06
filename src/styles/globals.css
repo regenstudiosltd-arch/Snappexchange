@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Updated SnappX Brand Colors - Cyan/Teal Theme */
+    --primary: 191 91% 55%; /* Cyan #22D3EE */
+    --primary-foreground: 0 0% 100%; /* White */
+    
+    --secondary: 188 94% 40%; /* Teal #0891B2 */
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 191 91% 65%; /* Light Cyan #5EEAD4 */
+    --accent-foreground: 210 40% 15%;
+    
+    --background: 0 0% 100%;
+    --foreground: 210 40% 10%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 210 40% 10%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 40% 10%;
+    
+    --muted: 210 40% 96%;
+    --muted-foreground: 210 10% 45%;
+    
+    --border: 210 40% 90%;
+    --input: 210 40% 90%;
+    --ring: 191 91% 55%;
+    
+    --radius: 0.5rem;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  h1 {
+    @apply text-4xl;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  
+  h2 {
+    @apply text-3xl;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  
+  h3 {
+    @apply text-2xl;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  
+  h4 {
+    @apply text-xl;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  
+  p {
+    line-height: 1.6;
+  }
+}
+
+/* Custom animations */
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-in {
+  animation: slide-in-from-top 0.3s ease-out;
+}
