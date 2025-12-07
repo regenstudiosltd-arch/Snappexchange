@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { TrendingUp, Users, PlusCircle, Target, Bot, Lightbulb, Eye, EyeOff, ArrowUpRight, ArrowDownRight, DollarSign } from "lucide-react";
+import { TrendingUp, Users, PlusCircle, Target, Bot, Lightbulb, Eye, EyeOff, ArrowUpRight, ArrowDownRight, DollarSign, Wallet, Calendar, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Progress } from "../ui/progress";
 import { CreateGroupModal } from "../modals/CreateGroupModal";
 import { CashOutModal } from "../modals/CashOutModal";
 import { JoinGroupModal } from "../modals/JoinGroupModal";
+import { TopUpWalletModal } from "../modals/TopUpWalletModal";
 
 interface DashboardHomeEnhancedProps {
   onNavigate: (page: string) => void;
@@ -18,11 +19,46 @@ export function DashboardHomeEnhanced({ onNavigate }: DashboardHomeEnhancedProps
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [isJoinGroupOpen, setIsJoinGroupOpen] = useState(false);
   const [isCashOutOpen, setIsCashOutOpen] = useState(false);
+  const [isTopUpOpen, setIsTopUpOpen] = useState(false);
   const [savingsExpanded, setSavingsExpanded] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(850);
 
   const totalSavings = 7150;
   const individualSavings = 1500;
   const groupSavings = 5650;
+
+  // Scheduled contributions for auto-deduction
+  const scheduledContributions = [
+    {
+      id: "1",
+      groupName: "Family Savings Circle",
+      amount: 200,
+      dueDate: "2025-12-10",
+      status: "scheduled",
+      frequency: "Monthly",
+    },
+    {
+      id: "2",
+      groupName: "Business Partners",
+      amount: 150,
+      dueDate: "2025-12-12",
+      status: "scheduled",
+      frequency: "Bi-weekly",
+    },
+    {
+      id: "3",
+      groupName: "Wedding Fund",
+      amount: 100,
+      dueDate: "2025-12-15",
+      status: "scheduled",
+      frequency: "Weekly",
+    },
+  ];
+
+  const handleTopUpComplete = (amount: number, method: string) => {
+    setWalletBalance(prev => prev + amount);
+    console.log(`Wallet topped up with GHS ${amount} via ${method}`);
+  };
 
   const quickActions = [
     {
@@ -324,6 +360,125 @@ export function DashboardHomeEnhanced({ onNavigate }: DashboardHomeEnhancedProps
         </CardContent>
       </Card>
 
+      {/* Scheduled Contributions & Wallet Balance */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Scheduled Contributions */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-cyan-600" />
+              <div>
+                <CardTitle>Scheduled Contributions</CardTitle>
+                <CardDescription>Auto-deduction from wallet</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {scheduledContributions.map((contribution) => (
+              <div key={contribution.id} className="p-3 rounded-lg border bg-gradient-to-r from-cyan-50 to-teal-50 border-cyan-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-sm">{contribution.groupName}</span>
+                  <div className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                    <Clock className="h-3 w-3" />
+                    {contribution.status}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <div className="text-muted-foreground">
+                    <span className="text-cyan-600 font-semibold">GHS {contribution.amount}</span> • {contribution.frequency}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(contribution.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div className="pt-2 border-t">
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <CheckCircle2 className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-blue-900">
+                  <p className="font-semibold mb-1">Auto-Deduction Active</p>
+                  <p>Contributions will be automatically deducted from your wallet on due dates. Ensure sufficient balance to avoid missed payments.</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Wallet Balance */}
+        <Card className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-5 w-5" />
+                <CardTitle>Wallet Balance</CardTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20"
+                onClick={() => setShowBalance(!showBalance)}
+              >
+                {showBalance ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <div className="text-4xl mb-2">
+                  {showBalance ? `GHS ${walletBalance.toFixed(2)}` : "GHS •••••"}
+                </div>
+                <div className="text-sm text-white/80">
+                  Available for auto-deductions
+                </div>
+              </div>
+
+              {/* Upcoming Deductions */}
+              <div className="pt-4 border-t border-white/20">
+                <div className="text-sm text-white/80 mb-2">Upcoming Deductions</div>
+                <div className="text-2xl mb-1">
+                  GHS {scheduledContributions.reduce((sum, c) => sum + c.amount, 0).toFixed(2)}
+                </div>
+                <div className="text-xs text-white/70">
+                  Total from {scheduledContributions.length} scheduled contributions
+                </div>
+              </div>
+
+              {/* Balance Status */}
+              {walletBalance >= scheduledContributions.reduce((sum, c) => sum + c.amount, 0) ? (
+                <div className="flex items-start gap-2 p-3 bg-green-500/20 border border-green-300/30 rounded-lg">
+                  <CheckCircle2 className="h-4 w-4 text-green-200 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs text-green-50">
+                    <p className="font-semibold mb-1">Sufficient Balance</p>
+                    <p>Your wallet has enough funds for upcoming contributions</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2 p-3 bg-amber-500/20 border border-amber-300/30 rounded-lg">
+                  <AlertCircle className="h-4 w-4 text-amber-200 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs text-amber-50">
+                    <p className="font-semibold mb-1">Low Balance</p>
+                    <p>Top up to avoid missed contributions</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="secondary"
+                  className="flex-1 bg-white text-purple-600 hover:bg-gray-100"
+                  onClick={() => setIsTopUpOpen(true)}
+                >
+                  <Wallet className="h-4 w-4 mr-2" />
+                  Top Up Wallet
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Modals */}
       <CreateGroupModal
         isOpen={isCreateGroupOpen}
@@ -347,6 +502,13 @@ export function DashboardHomeEnhanced({ onNavigate }: DashboardHomeEnhancedProps
           number: "024 XXX XXXX",
           name: "Kwame Asante",
         }}
+      />
+
+      <TopUpWalletModal
+        isOpen={isTopUpOpen}
+        onClose={() => setIsTopUpOpen(false)}
+        onComplete={handleTopUpComplete}
+        currentBalance={walletBalance}
       />
     </div>
   );
