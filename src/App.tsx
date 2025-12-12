@@ -16,13 +16,14 @@ import { DashboardHeader } from "./components/DashboardHeader";
 import { DashboardHomeEnhanced } from "./components/pages/DashboardHomeEnhanced";
 import { GoalsPage } from "./components/pages/GoalsPage";
 import { GroupsPage } from "./components/pages/GroupsPage";
+import { RequestsPage } from "./components/pages/RequestsPage";
 import { AIAssistantPage } from "./components/pages/AIAssistantPage";
 import { BotIntegrationPage } from "./components/pages/BotIntegrationPage";
 import { AnalyticsPage } from "./components/pages/AnalyticsPage";
 import { SettingsPage } from "./components/pages/SettingsPage";
 
 type View = "landing" | "signup" | "login" | "otp" | "dashboard";
-type DashboardPage = "Dashboard" | "Goals" | "Groups" | "AI Assistant" | "Bot Integration" | "Analytics" | "Settings";
+type DashboardPage = "Dashboard" | "Goals" | "Groups" | "Requests" | "AI Assistant" | "Bot Integration" | "Analytics" | "Settings";
 
 const pageVariants = {
   initial: { opacity: 0, y: 20 },
@@ -108,6 +109,8 @@ export default function App() {
           return <GoalsPage />;
         case "Groups":
           return <GroupsPage />;
+        case "Requests":
+          return <RequestsPage />;
         case "AI Assistant":
           return <AIAssistantPage />;
         case "Bot Integration":

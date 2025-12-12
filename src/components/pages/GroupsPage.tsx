@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, Plus, Search, Crown, TrendingUp, Calendar } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
@@ -26,44 +26,64 @@ export function GroupsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
-  const [groups, setGroups] = useState<Group[]>([
-    {
-      id: "1",
-      name: "University Friends",
-      description: "Saving for our graduation trip",
-      members: 12,
-      totalSavings: 24500,
-      contributionFrequency: "Weekly",
-      contributionAmount: 50,
-      nextContribution: "2025-12-10",
-      status: "active",
-      isAdmin: true,
-    },
-    {
-      id: "2",
-      name: "Family Savings Circle",
-      description: "Emergency fund for the family",
-      members: 8,
-      totalSavings: 18200,
-      contributionFrequency: "Monthly",
-      contributionAmount: 200,
-      nextContribution: "2025-12-15",
-      status: "active",
-      isAdmin: false,
-    },
-    {
-      id: "3",
-      name: "Startup Capital",
-      description: "Building funds for our business",
-      members: 5,
-      totalSavings: 12800,
-      contributionFrequency: "Bi-weekly",
-      contributionAmount: 150,
-      nextContribution: "2025-12-08",
-      status: "active",
-      isAdmin: true,
-    },
-  ]);
+  const [groups, setGroups] = useState<Group[]>([]);
+
+  // Load groups from localStorage on mount
+  useEffect(() => {
+    const storedGroups = localStorage.getItem("snappx_groups");
+    if (storedGroups) {
+      setGroups(JSON.parse(storedGroups));
+    } else {
+      // Initialize with default groups
+      const defaultGroups: Group[] = [
+        {
+          id: "1",
+          name: "University Friends",
+          description: "Saving for our graduation trip",
+          members: 12,
+          totalSavings: 24500,
+          contributionFrequency: "Weekly",
+          contributionAmount: 50,
+          nextContribution: "2025-12-10",
+          status: "active",
+          isAdmin: true,
+        },
+        {
+          id: "2",
+          name: "Family Savings Circle",
+          description: "Emergency fund for the family",
+          members: 8,
+          totalSavings: 18200,
+          contributionFrequency: "Monthly",
+          contributionAmount: 200,
+          nextContribution: "2025-12-15",
+          status: "active",
+          isAdmin: false,
+        },
+        {
+          id: "3",
+          name: "Startup Capital",
+          description: "Building funds for our business",
+          members: 5,
+          totalSavings: 12800,
+          contributionFrequency: "Bi-weekly",
+          contributionAmount: 150,
+          nextContribution: "2025-12-08",
+          status: "active",
+          isAdmin: true,
+        },
+      ];
+      setGroups(defaultGroups);
+      localStorage.setItem("snappx_groups", JSON.stringify(defaultGroups));
+    }
+  }, []);
+
+  // Save groups to localStorage whenever they change
+  useEffect(() => {
+    if (groups.length > 0) {
+      localStorage.setItem("snappx_groups", JSON.stringify(groups));
+    }
+  }, [groups]);
 
   const filteredGroups = groups.filter(group =>
     group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

@@ -548,6 +548,10 @@
     top: calc(var(--spacing) * 1);
   }
 
+  .top-1\/2 {
+    top: 50%;
+  }
+
   .top-3 {
     top: calc(var(--spacing) * 3);
   }
@@ -1065,6 +1069,11 @@
     translate: var(--tw-translate-x) var(--tw-translate-y);
   }
 
+  .-translate-y-1\/2 {
+    --tw-translate-y: calc(calc(1 / 2 * 100%) * -1);
+    translate: var(--tw-translate-x) var(--tw-translate-y);
+  }
+
   .translate-y-\[-50\%\] {
     --tw-translate-y: -50%;
     translate: var(--tw-translate-x) var(--tw-translate-y);
@@ -1502,6 +1511,10 @@
     }
   }
 
+  .border-l-cyan-500 {
+    border-left-color: var(--color-cyan-500);
+  }
+
   .bg-\[\#059669\]\/10 {
     background-color: oklab(59.5971% -.121996 .0367738 / .1);
   }
@@ -1666,6 +1679,10 @@
     .bg-green-500\/20 {
       background-color: color-mix(in oklab, var(--color-green-500) 20%, transparent);
     }
+  }
+
+  .bg-green-600 {
+    background-color: var(--color-green-600);
   }
 
   .bg-muted {
@@ -2055,6 +2072,10 @@
 
   .pl-2 {
     padding-left: calc(var(--spacing) * 2);
+  }
+
+  .pl-9 {
+    padding-left: calc(var(--spacing) * 9);
   }
 
   .pl-10 {
@@ -2669,6 +2690,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-green-700:hover {
+      background-color: var(--color-green-700);
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-muted:hover {
       background-color: oklch(.97 0 0);
     }
@@ -2683,6 +2710,12 @@
   @media (hover: hover) {
     .hover\:bg-primary\/90:hover {
       background-color: color-mix(in oklab, oklch(.205 0 0) 90%, transparent);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:bg-red-50:hover {
+      background-color: var(--color-red-50);
     }
   }
 
@@ -3121,6 +3154,24 @@
   @media (width >= 48rem) {
     .md\:flex-col {
       flex-direction: column;
+    }
+  }
+
+  @media (width >= 48rem) {
+    .md\:flex-row {
+      flex-direction: row;
+    }
+  }
+
+  @media (width >= 48rem) {
+    .md\:items-center {
+      align-items: center;
+    }
+  }
+
+  @media (width >= 48rem) {
+    .md\:justify-between {
+      justify-content: space-between;
     }
   }
 

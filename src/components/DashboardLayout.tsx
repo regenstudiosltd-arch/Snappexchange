@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, Target, Users, TrendingUp, Settings, MessageCircle, Bot, Menu, X } from "lucide-react";
+import { LayoutDashboard, Target, Users, TrendingUp, Settings, MessageCircle, Bot, Menu, X, UserPlus } from "lucide-react";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -16,6 +16,7 @@ export function DashboardLayout({ children, currentPage, onNavigate }: Dashboard
     { icon: LayoutDashboard, label: "Dashboard", page: "Dashboard" },
     { icon: Target, label: "Goals", page: "Goals" },
     { icon: Users, label: "Groups", page: "Groups" },
+    { icon: UserPlus, label: "Requests", page: "Requests" },
     { icon: MessageCircle, label: "AI Assistant", page: "AI Assistant" },
     { icon: Bot, label: "Bot Integration", page: "Bot Integration" },
     { icon: TrendingUp, label: "Analytics", page: "Analytics" },
