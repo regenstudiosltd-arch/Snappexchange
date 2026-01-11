@@ -63,9 +63,6 @@ interface SignupEnhancedProps {
   onComplete: () => void;
 }
 
-// --- Reusable Components (DRY) ---
-
-// 1. Reusable Input with Icon
 interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   icon?: LucideIcon;
@@ -96,7 +93,6 @@ const FormInput = ({
   </div>
 );
 
-// 2. Reusable Selection Grid (For User Type & Payout)
 interface SelectionGridProps<T extends string> {
   label: string;
   options: readonly T[];
