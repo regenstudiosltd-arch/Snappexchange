@@ -1,8 +1,18 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import logoImage from '../assets/logo.png';
 import Image from 'next/image';
 
 export function Footer() {
+  const [year, setYear] = useState<number | null>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setYear(new Date().getFullYear());
+  }, []);
+
   return (
     <footer className="bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-12">
@@ -144,7 +154,9 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-          <p>&copy; {new Date().getFullYear()} SnappX. All rights reserved.</p>
+          <p suppressHydrationWarning>
+            &copy; {year ?? '...'} SnappX. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
