@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { ArrowLeft, Home, Bell, User, Settings, LogOut, Check } from "lucide-react";
-import { Button } from "./ui/button";
-import logoImage from "figma:asset/0ed25e47149e7d72733dec05c2993c034a158749.png";
+import { useState } from 'react';
+import { ArrowLeft, Home, Bell, User, Settings, LogOut } from 'lucide-react';
+import { Button } from './ui/button';
+import Image from 'next/image';
+import logoImage from '../assets/logo.png';
 
 interface DashboardHeaderProps {
   currentPage: string;
@@ -11,7 +12,11 @@ interface DashboardHeaderProps {
   onLogout: () => void;
 }
 
-export function DashboardHeader({ currentPage, onNavigate, onLogout }: DashboardHeaderProps) {
+export function DashboardHeader({
+  currentPage,
+  onNavigate,
+  onLogout,
+}: DashboardHeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [notificationSettings, setNotificationSettings] = useState({
@@ -21,20 +26,38 @@ export function DashboardHeader({ currentPage, onNavigate, onLogout }: Dashboard
   });
 
   const notifications = [
-    { id: 1, title: "Payment Due Tomorrow", message: "Family Savings Circle - ₵200", time: "2 hours ago", unread: true },
-    { id: 2, title: "Payout Scheduled", message: "You'll receive ₵1,500 in 3 days", time: "5 hours ago", unread: true },
-    { id: 3, title: "Goal Progress", message: "Emergency Fund is 64% complete", time: "1 day ago", unread: false },
+    {
+      id: 1,
+      title: 'Payment Due Tomorrow',
+      message: 'Family Savings Circle - ₵200',
+      time: '2 hours ago',
+      unread: true,
+    },
+    {
+      id: 2,
+      title: 'Payout Scheduled',
+      message: "You'll receive ₵1,500 in 3 days",
+      time: '5 hours ago',
+      unread: true,
+    },
+    {
+      id: 3,
+      title: 'Goal Progress',
+      message: 'Emergency Fund is 64% complete',
+      time: '1 day ago',
+      unread: false,
+    },
   ];
 
-  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-b-gray-200 border-gray-200 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Left: Navigation */}
           <div className="flex items-center gap-2">
-            {currentPage !== "Dashboard" && (
+            {currentPage !== 'Dashboard' && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -47,8 +70,8 @@ export function DashboardHeader({ currentPage, onNavigate, onLogout }: Dashboard
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => onNavigate("Dashboard")}
-              className={currentPage === "Dashboard" ? "bg-muted" : ""}
+              onClick={() => onNavigate('Dashboard')}
+              className={currentPage === 'Dashboard' ? 'bg-muted' : ''}
             >
               <Home className="h-5 w-5" />
             </Button>
@@ -56,10 +79,16 @@ export function DashboardHeader({ currentPage, onNavigate, onLogout }: Dashboard
 
           {/* Center: Logo & Brand */}
           <div className="flex items-center gap-2">
-            <img src={logoImage} alt="SnappX Logo" className="h-10 w-10 rounded-lg" />
+            <Image
+              src={logoImage}
+              alt="SnappX Logo"
+              className="h-10 w-10 rounded-[10px]"
+            />
             <div className="hidden sm:block">
               <div className="text-lg font-semibold">SnappX</div>
-              <div className="text-xs text-muted-foreground">Empowering Collective Growth</div>
+              <div className="text-xs text-gray-600">
+                Empowering Collective Growth
+              </div>
             </div>
           </div>
 
@@ -77,53 +106,65 @@ export function DashboardHeader({ currentPage, onNavigate, onLogout }: Dashboard
                 className="relative"
               >
                 <Bell className="h-5 w-5" />
-                {notifications.some(n => n.unread) && (
+                {notifications.some((n) => n.unread) && (
                   <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-cyan-500" />
                 )}
               </Button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 rounded-lg border bg-popover shadow-lg">
-                  <div className="p-4 border-b">
+                <div className="absolute right-0 mt-2 w-80 rounded-lg border border-gray-200 bg-white shadow-lg">
+                  <div className="p-4 border-b border-b-gray-200">
                     <h3 className="font-semibold mb-3">Notifications</h3>
-                    
+
                     {/* Notification Settings */}
                     <div className="space-y-2 text-sm">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={notificationSettings.groupPaymentReminders}
-                          onChange={(e) => setNotificationSettings({
-                            ...notificationSettings,
-                            groupPaymentReminders: e.target.checked
-                          })}
+                          onChange={(e) =>
+                            setNotificationSettings({
+                              ...notificationSettings,
+                              groupPaymentReminders: e.target.checked,
+                            })
+                          }
                           className="rounded border-gray-300"
                         />
-                        <span className="text-muted-foreground">Group payment reminders</span>
+                        <span className="text-gray-500">
+                          Group payment reminders
+                        </span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={notificationSettings.payoutDateReminders}
-                          onChange={(e) => setNotificationSettings({
-                            ...notificationSettings,
-                            payoutDateReminders: e.target.checked
-                          })}
+                          onChange={(e) =>
+                            setNotificationSettings({
+                              ...notificationSettings,
+                              payoutDateReminders: e.target.checked,
+                            })
+                          }
                           className="rounded border-gray-300"
                         />
-                        <span className="text-muted-foreground">Payout date reminders</span>
+                        <span className="text-gray-500">
+                          Payout date reminders
+                        </span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={notificationSettings.goalProgressUpdates}
-                          onChange={(e) => setNotificationSettings({
-                            ...notificationSettings,
-                            goalProgressUpdates: e.target.checked
-                          })}
+                          onChange={(e) =>
+                            setNotificationSettings({
+                              ...notificationSettings,
+                              goalProgressUpdates: e.target.checked,
+                            })
+                          }
                           className="rounded border-gray-300"
                         />
-                        <span className="text-muted-foreground">Goal progress updates</span>
+                        <span className="text-gray-500">
+                          Goal progress updates
+                        </span>
                       </label>
                     </div>
                   </div>
@@ -132,25 +173,35 @@ export function DashboardHeader({ currentPage, onNavigate, onLogout }: Dashboard
                     {notifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`p-4 border-b hover:bg-muted/50 cursor-pointer ${
-                          notification.unread ? "bg-cyan-50/50" : ""
+                        className={`p-4 border-b border-b-gray-200 hover:bg-muted/50 cursor-pointer ${
+                          notification.unread ? 'bg-cyan-50/50' : ''
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className={`w-2 h-2 rounded-full mt-2 ${
-                            notification.unread ? "bg-cyan-500" : "bg-transparent"
-                          }`} />
+                          <div
+                            className={`w-2 h-2 rounded-full mt-2 ${
+                              notification.unread
+                                ? 'bg-cyan-500'
+                                : 'bg-transparent'
+                            }`}
+                          />
                           <div className="flex-1">
-                            <p className="font-medium text-sm">{notification.title}</p>
-                            <p className="text-sm text-muted-foreground">{notification.message}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
+                            <p className="font-medium text-sm">
+                              {notification.title}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {notification.time}
+                            </p>
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="p-3 text-center border-t">
+                  <div className="p-3 text-center border-t border-t-gray-200">
                     <button className="text-sm text-cyan-600 hover:underline">
                       View All Notifications
                     </button>
@@ -160,7 +211,7 @@ export function DashboardHeader({ currentPage, onNavigate, onLogout }: Dashboard
             </div>
 
             {/* Profile Dropdown */}
-            <div className="relative">
+            <div className="relative bg-white">
               <Button
                 variant="ghost"
                 size="icon"
@@ -171,29 +222,33 @@ export function DashboardHeader({ currentPage, onNavigate, onLogout }: Dashboard
                 className="rounded-full"
               >
                 {currentUser.profilePicture ? (
-                  <img
+                  <Image
                     src={currentUser.profilePicture}
                     alt="Profile"
                     className="h-8 w-8 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="h-8 w-8 rounded-full bg-cyan-500 flex items-center justify-center text-white text-sm">
-                    {currentUser.fullName?.charAt(0) || "U"}
+                  <div className="h-8 w-8 rounded-full bg-cyan-500 flex items-center justify-center text-sm text-white">
+                    {currentUser.fullName?.charAt(0) || 'U'}
                   </div>
                 )}
               </Button>
 
               {showProfile && (
-                <div className="absolute right-0 mt-2 w-64 rounded-lg border bg-popover shadow-lg">
-                  <div className="p-4 border-b">
-                    <p className="font-semibold">{currentUser.fullName || "User"}</p>
-                    <p className="text-sm text-muted-foreground">{currentUser.email || "user@example.com"}</p>
+                <div className="absolute right-0 mt-2 w-64 rounded-lg border border-gray-200 shadow-lg bg-white">
+                  <div className="p-4 border-b-gray-200 border- border-b-gray-200-gray-200">
+                    <p className="font-semibold">
+                      {currentUser.fullName || 'User'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {currentUser.email || 'user@example.com'}
+                    </p>
                   </div>
 
                   <div className="p-2">
                     <button
                       onClick={() => {
-                        onNavigate("Profile");
+                        onNavigate('Profile');
                         setShowProfile(false);
                       }}
                       className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-left"
@@ -203,7 +258,7 @@ export function DashboardHeader({ currentPage, onNavigate, onLogout }: Dashboard
                     </button>
                     <button
                       onClick={() => {
-                        onNavigate("Settings");
+                        onNavigate('Settings');
                         setShowProfile(false);
                       }}
                       className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-left"
@@ -213,13 +268,13 @@ export function DashboardHeader({ currentPage, onNavigate, onLogout }: Dashboard
                     </button>
                   </div>
 
-                  <div className="p-2 border-t">
+                  <div className="p-2 border-t border-t-gray-200">
                     <button
                       onClick={() => {
                         setShowProfile(false);
                         onLogout();
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-left text-destructive"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-left text-red-500"
                     >
                       <LogOut className="h-4 w-4" />
                       <span className="text-sm">Sign Out</span>
