@@ -157,19 +157,23 @@ export function GoalsPage() {
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <CardTitle className="text-lg">{goal.name}</CardTitle>
+              <CardTitle className="text-lg font-medium">{goal.name}</CardTitle>
               <CardDescription className="mt-1 text-gray-500">
                 ₵{goal.contributionAmount.toLocaleString()}{' '}
                 {goal.contributionFrequency}
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Edit2 className="h-4 w-4" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-gray-100"
+              >
+                <Edit2 className="h-4 w-4 " />
               </Button>
               <Button
                 size="icon"
-                className="h-8 w-8 text-destructive"
+                className="h-8 w-8 bg-white hover:bg-gray-100"
                 onClick={() => handleDeleteGoal(goal.id)}
               >
                 <Trash2 className="h-4 w-4 text-red-500" />
@@ -194,7 +198,7 @@ export function GoalsPage() {
               <span className="text-gray-500">Progress</span>
               <span>{progress.toFixed(0)}%</span>
             </div>
-            <Progress value={progress} className="h-2 bg-gray-800" />
+            <Progress value={progress} className="h-2 bg-gray-200" />
           </div>
 
           <div className="flex items-center justify-between text-sm">
@@ -249,7 +253,7 @@ export function GoalsPage() {
                 <span className="opacity-90">Overall Progress</span>
                 <span>{overallProgress.toFixed(0)}%</span>
               </div>
-              <Progress value={overallProgress} className="h-2 bg-gray-800" />
+              <Progress value={overallProgress} className="h-2 bg-gray-200" />
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-white/20">
               <span className="text-sm">{goals.length} Active Goals</span>
@@ -270,7 +274,7 @@ export function GoalsPage() {
       {/* Goals Grid */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[16px] md:text-[24px]">Your Goals</h3>
+          <h3 className="text-[16px] md:text-[24px] font-medium">Your Goals</h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -278,7 +282,6 @@ export function GoalsPage() {
             <GoalCard key={goal.id} goal={goal} />
           ))}
 
-          {/* Add New Goal Card */}
           <Card
             className="border-2 border-dashed border-gray-200 hover:border-cyan-500 hover:bg-gray-50 transition-all cursor-pointer"
             onClick={openCreateModal}
@@ -287,7 +290,7 @@ export function GoalsPage() {
               <div className="w-16 h-16 rounded-full bg-cyan-500/10 flex items-center justify-center mb-4">
                 <Target className="h-8 w-8 text-cyan-600" />
               </div>
-              <h3 className="mb-2 text-[16px] md:text-[24px]">
+              <h3 className="mb-2 text-[16px] md:text-[24px] font-medium">
                 Create New Goal
               </h3>
               <p className="text-sm text-gray-500">

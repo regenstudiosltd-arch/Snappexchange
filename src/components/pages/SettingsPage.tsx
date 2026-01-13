@@ -277,7 +277,7 @@ export function SettingsPage() {
             />
           </div>
 
-          <Button className="bg-gray-100 border border-gray-200">
+          <Button className="bg-gray-100 border border-gray-200 text-gray-600 hover:text-white">
             Update Payout Account
           </Button>
         </CardContent>
@@ -508,7 +508,7 @@ export function SettingsPage() {
                 className="border-gray-200 rounded-lg h-10 focus-visible:ring-gray-300 placeholder:text-gray-500"
               />
             </div>
-            <Button className="bg-gray-100 border border-gray-200">
+            <Button className="bg-gray-100 border border-gray-200 text-gray-600 hover:text-white">
               Update Password
             </Button>
           </div>
