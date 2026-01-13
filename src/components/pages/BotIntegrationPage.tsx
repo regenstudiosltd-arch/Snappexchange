@@ -362,7 +362,10 @@ export function BotIntegrationPage() {
                   <p className="text-sm text-gray-600">WhatsApp • 8 members</p>
                 </div>
               </div>
-              <Button size="sm" className="border border-gray-200 bg-gray-100">
+              <Button
+                size="sm"
+                className="border border-gray-200 bg-gray-100 text-gray-600 hover:text-white"
+              >
                 Manage
               </Button>
             </div>
@@ -377,7 +380,10 @@ export function BotIntegrationPage() {
                   <p className="text-sm text-gray-600">Telegram • 12 members</p>
                 </div>
               </div>
-              <Button size="sm" className="border border-gray-200 bg-gray-100">
+              <Button
+                size="sm"
+                className="border border-gray-200 bg-gray-100 text-gray-600 hover:text-white"
+              >
                 Manage
               </Button>
             </div>
