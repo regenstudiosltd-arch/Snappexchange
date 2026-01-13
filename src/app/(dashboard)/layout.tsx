@@ -1,11 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { DashboardHeader } from '@/src/components/DashboardHeader';
 import { DashboardLayout } from '@/src/components/DashboardLayout';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -13,6 +14,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     if (!session) {
       router.push('/login');
     } else {
+      // Simulate checking session validity
       setTimeout(() => {
         setIsLoading(false);
       }, 0);
@@ -25,6 +27,33 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     router.push('/login');
   };
 
+  // Shared navigation logic
+  const handleNavigate = (page: string) => {
+    const slug = page.toLowerCase().replace(' ', '-');
+    const target = slug === 'dashboard' ? '/dashboard' : `/${slug}`;
+    router.push(target);
+  };
+
+  // Helper to determine the current page title based on URL
+  const getCurrentPageName = () => {
+    const path = pathname?.split('/')[1] || 'dashboard';
+
+    const pageMap: Record<string, string> = {
+      dashboard: 'Dashboard',
+      goals: 'Goals',
+      groups: 'Groups',
+      requests: 'Requests',
+      'ai-assistant': 'AI Assistant',
+      'bot-integration': 'Bot Integration',
+      analytics: 'Analytics',
+      settings: 'Settings',
+    };
+
+    return pageMap[path] || 'Dashboard';
+  };
+
+  const currentPage = getCurrentPageName();
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -36,15 +65,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <DashboardHeader
-        currentPage="Dashboard"
-        onNavigate={(page) => {
-          const slug = page.toLowerCase().replace(' ', '-');
-          const target = slug === 'dashboard' ? '/dashboard' : `/${slug}`;
-          router.push(target);
-        }}
+        currentPage={currentPage}
+        onNavigate={handleNavigate}
         onLogout={handleLogout}
       />
-      <DashboardLayout>{children}</DashboardLayout>
+      <DashboardLayout currentPage={currentPage} onNavigate={handleNavigate}>
+        {children}
+      </DashboardLayout>
     </div>
   );
 }
