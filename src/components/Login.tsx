@@ -1,28 +1,34 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Mail, Lock, ArrowRight } from "lucide-react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { useState } from 'react';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card';
 
 export function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle login logic here
-    console.log("Login:", { email, password });
+    console.log('Login:', { email, password });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#DC2626]/5 via-[#F59E0B]/5 to-[#059669]/5 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#DC2626]/5 via-[#F59E0B]/5 to-[#059669]/5 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gradient-to-br from-[#DC2626] via-[#F59E0B] to-[#059669]">
+            <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-linear-to-br from-[#DC2626] via-[#F59E0B] to-[#059669]">
               <span className="text-white text-xl">SX</span>
             </div>
           </div>
@@ -66,20 +72,25 @@ export function Login() {
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" className="rounded border-gray-300" />
-                <span className="text-sm text-muted-foreground">Remember me</span>
+                <span className="text-sm text-muted-foreground">
+                  Remember me
+                </span>
               </label>
               <a href="#" className="text-sm text-[#DC2626] hover:underline">
                 Forgot password?
               </a>
             </div>
 
-            <Button type="submit" className="w-full bg-[#DC2626] hover:bg-[#B91C1C] group">
+            <Button
+              type="submit"
+              className="w-full bg-[#DC2626] hover:bg-[#B91C1C] group"
+            >
               Login
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{' '}
               <a href="#" className="text-[#DC2626] hover:underline">
                 Sign up
               </a>
@@ -91,7 +102,9 @@ export function Login() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
             </div>
           </div>
 

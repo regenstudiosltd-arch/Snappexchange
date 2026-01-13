@@ -211,7 +211,7 @@ export function DashboardHeader({
             </div>
 
             {/* Profile Dropdown */}
-            <div className="relative bg-white">
+            <div className="relative bg-transparent">
               <Button
                 variant="ghost"
                 size="icon"
