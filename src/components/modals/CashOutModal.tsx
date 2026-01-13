@@ -1,11 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { DollarSign, AlertCircle, Check } from "lucide-react";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog";
+import { useState } from 'react';
+import { DollarSign, AlertCircle, Check } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 
 interface CashOutModalProps {
   isOpen: boolean;
@@ -18,8 +24,13 @@ interface CashOutModalProps {
   };
 }
 
-export function CashOutModal({ isOpen, onClose, availableBalance, payoutAccount }: CashOutModalProps) {
-  const [amount, setAmount] = useState("");
+export function CashOutModal({
+  isOpen,
+  onClose,
+  availableBalance,
+  payoutAccount,
+}: CashOutModalProps) {
+  const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -30,22 +41,23 @@ export function CashOutModal({ isOpen, onClose, availableBalance, payoutAccount 
 
   const handleCashOut = async () => {
     setIsProcessing(true);
-    
+
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     // Update user balance in localStorage
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
-    currentUser.totalSavings = (currentUser.totalSavings || availableBalance) - numericAmount;
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    currentUser.totalSavings =
+      (currentUser.totalSavings || availableBalance) - numericAmount;
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
     setIsProcessing(false);
     setIsSuccess(true);
-    
+
     // Close after showing success
     setTimeout(() => {
       setIsSuccess(false);
-      setAmount("");
+      setAmount('');
       onClose();
     }, 2000);
   };
@@ -63,7 +75,8 @@ export function CashOutModal({ isOpen, onClose, availableBalance, payoutAccount 
             <div>
               <h3 className="text-xl mb-2">Cash Out Successful!</h3>
               <p className="text-muted-foreground">
-                ₵{amountAfterFee.toFixed(2)} has been sent to your {payoutAccount.provider} account
+                ₵{amountAfterFee.toFixed(2)} has been sent to your{' '}
+                {payoutAccount.provider} account
               </p>
             </div>
           </div>
@@ -74,7 +87,7 @@ export function CashOutModal({ isOpen, onClose, availableBalance, payoutAccount 
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[97vh] overflow-y-auto no-scrollbar">
         <DialogHeader>
           <DialogTitle>Cash Out</DialogTitle>
           <DialogDescription>
@@ -84,7 +97,7 @@ export function CashOutModal({ isOpen, onClose, availableBalance, payoutAccount 
 
         <div className="space-y-6 py-4">
           {/* Available Balance */}
-          <div className="bg-gradient-to-br from-[#DC2626] to-[#B91C1C] text-white rounded-lg p-4">
+          <div className="bg-linear-to-br from-[#DC2626] to-[#B91C1C] text-white rounded-lg p-4">
             <div className="text-sm opacity-90 mb-1">Available Balance</div>
             <div className="text-3xl">₵{availableBalance.toFixed(2)}</div>
           </div>
@@ -141,19 +154,25 @@ export function CashOutModal({ isOpen, onClose, availableBalance, payoutAccount 
                 <span>₵{numericAmount.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Service Fee ({serviceFeePercent}%)</span>
-                <span className="text-[#DC2626]">-₵{serviceFee.toFixed(2)}</span>
+                <span className="text-muted-foreground">
+                  Service Fee ({serviceFeePercent}%)
+                </span>
+                <span className="text-[#DC2626]">
+                  -₵{serviceFee.toFixed(2)}
+                </span>
               </div>
               <div className="flex items-center justify-between border-t pt-3">
-                <span>You'll Receive</span>
-                <span className="text-xl text-[#059669]">₵{amountAfterFee.toFixed(2)}</span>
+                <span>You&apos;ll Receive</span>
+                <span className="text-xl text-[#059669]">
+                  ₵{amountAfterFee.toFixed(2)}
+                </span>
               </div>
             </div>
           )}
 
           {/* Warning */}
           <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/20 rounded-lg p-3 flex items-start gap-2">
-            <AlertCircle className="h-5 w-5 text-[#F59E0B] flex-shrink-0 mt-0.5" />
+            <AlertCircle className="h-5 w-5 text-[#F59E0B] shrink-0 mt-0.5" />
             <div className="text-sm">
               <p className="mb-1">Please note:</p>
               <ul className="text-xs text-muted-foreground space-y-1">
@@ -179,7 +198,7 @@ export function CashOutModal({ isOpen, onClose, availableBalance, payoutAccount 
               className="flex-1 bg-[#DC2626] hover:bg-[#B91C1C]"
               disabled={!isValidAmount || isProcessing}
             >
-              {isProcessing ? "Processing..." : "Confirm Cash Out"}
+              {isProcessing ? 'Processing...' : 'Confirm Cash Out'}
             </Button>
           </div>
         </div>
