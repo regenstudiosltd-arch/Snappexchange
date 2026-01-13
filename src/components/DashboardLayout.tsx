@@ -1,7 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { LayoutDashboard, Target, Users, TrendingUp, Settings, MessageCircle, Bot, Menu, X, UserPlus } from "lucide-react";
+import {
+  LayoutDashboard,
+  Target,
+  Users,
+  TrendingUp,
+  Settings,
+  MessageCircle,
+  Bot,
+  UserPlus,
+} from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -9,18 +17,20 @@ interface DashboardLayoutProps {
   onNavigate: (page: string) => void;
 }
 
-export function DashboardLayout({ children, currentPage, onNavigate }: DashboardLayoutProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+export function DashboardLayout({
+  children,
+  currentPage,
+  onNavigate,
+}: DashboardLayoutProps) {
   const menuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", page: "Dashboard" },
-    { icon: Target, label: "Goals", page: "Goals" },
-    { icon: Users, label: "Groups", page: "Groups" },
-    { icon: UserPlus, label: "Requests", page: "Requests" },
-    { icon: MessageCircle, label: "AI Assistant", page: "AI Assistant" },
-    { icon: Bot, label: "Bot Integration", page: "Bot Integration" },
-    { icon: TrendingUp, label: "Analytics", page: "Analytics" },
-    { icon: Settings, label: "Settings", page: "Settings" },
+    { icon: LayoutDashboard, label: 'Dashboard', page: 'Dashboard' },
+    { icon: Target, label: 'Goals', page: 'Goals' },
+    { icon: Users, label: 'Groups', page: 'Groups' },
+    { icon: UserPlus, label: 'Requests', page: 'Requests' },
+    { icon: MessageCircle, label: 'AI Assistant', page: 'AI Assistant' },
+    { icon: Bot, label: 'Bot Integration', page: 'Bot Integration' },
+    { icon: TrendingUp, label: 'Analytics', page: 'Analytics' },
+    { icon: Settings, label: 'Settings', page: 'Settings' },
   ];
 
   return (
@@ -37,8 +47,8 @@ export function DashboardLayout({ children, currentPage, onNavigate }: Dashboard
                 onClick={() => onNavigate(item.page)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   isActive
-                    ? "bg-cyan-500 text-white"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? 'bg-cyan-500 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <Icon className="h-5 w-5" />
@@ -51,9 +61,7 @@ export function DashboardLayout({ children, currentPage, onNavigate }: Dashboard
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
-        <div className="container mx-auto px-4 py-6">
-          {children}
-        </div>
+        <div className="container mx-auto px-4 py-6">{children}</div>
       </main>
 
       {/* Mobile Bottom Navigation */}
@@ -66,9 +74,7 @@ export function DashboardLayout({ children, currentPage, onNavigate }: Dashboard
               key={item.page}
               onClick={() => onNavigate(item.page)}
               className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                isActive
-                  ? "text-cyan-500"
-                  : "text-gray-600"
+                isActive ? 'text-cyan-500' : 'text-gray-600'
               }`}
             >
               <Icon className="h-5 w-5" />
