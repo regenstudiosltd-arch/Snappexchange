@@ -226,7 +226,13 @@ export default function AppClient() {
           <div className="w-full max-w-md">
             <OTPVerification
               phoneNumber={userPhoneNumber}
-              onComplete={handleOTPComplete}
+              isVerifying={false}
+              onVerify={() => {
+                handleOTPComplete();
+              }}
+              onResend={() => {
+                console.log('Resend requested');
+              }}
             />
           </div>
         </motion.div>
