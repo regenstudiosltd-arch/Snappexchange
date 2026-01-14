@@ -226,12 +226,8 @@ export default function AppClient() {
           <div className="w-full max-w-md">
             <OTPVerification
               phoneNumber={userPhoneNumber}
-              isVerifying={false}
-              onVerify={() => {
+              onVerifySuccess={() => {
                 handleOTPComplete();
-              }}
-              onResend={() => {
-                console.log('Resend requested');
               }}
             />
           </div>

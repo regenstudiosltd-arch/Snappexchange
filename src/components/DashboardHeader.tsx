@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Home, Bell, User, Settings, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import Image from 'next/image';
 import logoImage from '../assets/logo.png';
+import { useSession } from 'next-auth/react';
+import { apiClient } from '@/src/lib/axios';
 
 interface DashboardHeaderProps {
   currentPage: string;
@@ -12,13 +14,27 @@ interface DashboardHeaderProps {
   onLogout: () => void;
 }
 
+interface UserProfile {
+  fullName: string;
+  email: string;
+  profilePicture: string | null;
+}
+
 export function DashboardHeader({
   currentPage,
   onNavigate,
   onLogout,
 }: DashboardHeaderProps) {
+  const { data: session } = useSession();
+  const [userProfile, setUserProfile] = useState<UserProfile>({
+    fullName: '',
+    email: session?.user?.email || '',
+    profilePicture: null,
+  });
+
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+
   const [notificationSettings, setNotificationSettings] = useState({
     groupPaymentReminders: true,
     payoutDateReminders: true,
@@ -49,10 +65,36 @@ export function DashboardHeader({
     },
   ];
 
-  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  useEffect(() => {
+    if (session?.user?.accessToken) {
+      apiClient
+        .get('/auth/me/')
+        .then((response) => {
+          const data = response.data;
+          setUserProfile({
+            fullName: data.profile?.full_name || '',
+            email: data.user?.email || session.user?.email || '',
+            profilePicture: data.profile?.profile_picture || null,
+          });
+        })
+        .catch((err) => {
+          console.error('Error fetching user profile:', err);
+          setUserProfile((prev) => ({
+            ...prev,
+            email: session.user?.email || '',
+          }));
+        });
+    }
+  }, [session]);
+
+  const displayInitial = userProfile.fullName
+    ? userProfile.fullName.charAt(0).toUpperCase()
+    : userProfile.email
+    ? userProfile.email.charAt(0).toUpperCase()
+    : 'U';
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-b-gray-200 border-gray-200 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Left: Navigation */}
@@ -113,10 +155,9 @@ export function DashboardHeader({
 
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 rounded-lg border border-gray-200 bg-white shadow-lg">
-                  <div className="p-4 border-b border-b-gray-200">
+                  <div className="p-4 border-b border-gray-200">
                     <h3 className="font-semibold mb-3">Notifications</h3>
 
-                    {/* Notification Settings */}
                     <div className="space-y-2 text-sm">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -173,7 +214,7 @@ export function DashboardHeader({
                     {notifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`p-4 border-b border-b-gray-200 hover:bg-muted/50 cursor-pointer ${
+                        className={`p-4 border-b border-gray-200 hover:bg-muted/50 cursor-pointer ${
                           notification.unread ? 'bg-cyan-50/50' : ''
                         }`}
                       >
@@ -201,7 +242,7 @@ export function DashboardHeader({
                     ))}
                   </div>
 
-                  <div className="p-3 text-center border-t border-t-gray-200">
+                  <div className="p-3 text-center border-t border-gray-200">
                     <button className="text-sm text-cyan-600 hover:underline">
                       View All Notifications
                     </button>
@@ -211,7 +252,7 @@ export function DashboardHeader({
             </div>
 
             {/* Profile Dropdown */}
-            <div className="relative bg-transparent">
+            <div className="relative">
               <Button
                 variant="ghost"
                 size="icon"
@@ -221,27 +262,29 @@ export function DashboardHeader({
                 }}
                 className="rounded-full"
               >
-                {currentUser.profilePicture ? (
+                {userProfile.profilePicture ? (
                   <Image
-                    src={currentUser.profilePicture}
-                    alt="Profile"
+                    src={userProfile.profilePicture}
+                    alt="Profile picture"
+                    width={32}
+                    height={32}
                     className="h-8 w-8 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="h-8 w-8 rounded-full bg-cyan-500 flex items-center justify-center text-sm text-white">
-                    {currentUser.fullName?.charAt(0) || 'U'}
+                  <div className="h-8 w-8 rounded-full bg-cyan-500 flex items-center justify-center text-white font-medium text-sm">
+                    {displayInitial}
                   </div>
                 )}
               </Button>
 
               {showProfile && (
-                <div className="absolute right-0 mt-2 w-64 rounded-lg border border-gray-200 shadow-lg bg-white">
-                  <div className="p-4 border-b-gray-200 border- border-b-gray-200-gray-200">
-                    <p className="font-semibold">
-                      {currentUser.fullName || 'User'}
+                <div className="absolute right-0 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg">
+                  <div className="p-4 border-b border-gray-200">
+                    <p className="font-semibold truncate">
+                      {userProfile.fullName || 'User'}
                     </p>
-                    <p className="text-sm text-gray-500">
-                      {currentUser.email || 'user@example.com'}
+                    <p className="text-sm text-gray-500 truncate">
+                      {userProfile.email || 'user@example.com'}
                     </p>
                   </div>
 
@@ -268,7 +311,7 @@ export function DashboardHeader({
                     </button>
                   </div>
 
-                  <div className="p-2 border-t border-t-gray-200">
+                  <div className="p-2 border-t border-gray-200">
                     <button
                       onClick={() => {
                         setShowProfile(false);

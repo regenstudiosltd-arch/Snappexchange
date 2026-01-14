@@ -1,7 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { signIn } from 'next-auth/react';
+import { Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -12,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../ui/card';
+import { loginSchema, LoginForm } from '@/src/lib/schemas';
 
 interface LoginEnhancedProps {
   onSuccess: () => void;
@@ -19,45 +23,42 @@ interface LoginEnhancedProps {
 }
 
 export function LoginEnhanced({ onSuccess, onNavigate }: LoginEnhancedProps) {
-  const [emailOrPhone, setEmailOrPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      rememberMe: false,
+    },
+  });
+
+  const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
+    setError('');
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        login_field: data.login_field,
+        password: data.password,
+        remember_me: data.rememberMe,
+      });
 
-    const currentUser = localStorage.getItem('currentUser');
-
-    if (currentUser) {
-      const user = JSON.parse(currentUser);
-      // Simple validation
-      if (
-        (user.email === emailOrPhone || user.phoneNumber === emailOrPhone) &&
-        password
-      ) {
-        if (rememberMe) {
-          localStorage.setItem('rememberMe', 'true');
-        }
-        // Create session
-        const sessionToken =
-          'session_' + Date.now() + '_' + Math.random().toString(36);
-        localStorage.setItem('snappx_session', sessionToken);
-        localStorage.setItem('snappx_user', currentUser);
+      if (result?.error) {
+        setError(result.error);
+      } else if (result?.ok) {
         onSuccess();
-      } else {
-        setError('Invalid credentials. Please try again.');
       }
-    } else {
-      setError('No account found. Please sign up first.');
+    } catch {
+      setError('An unexpected error occurred.');
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (
@@ -73,27 +74,30 @@ export function LoginEnhanced({ onSuccess, onNavigate }: LoginEnhancedProps) {
           <CardDescription>Login to your SnappX account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex gap-2 items-center">
+                <AlertCircle className="h-4 w-4" />
                 {error}
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="emailOrPhone">Email or Phone Number</Label>
+              <Label htmlFor="login_field">Email or Phone Number</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                 <Input
-                  id="emailOrPhone"
-                  type="text"
+                  id="login_field"
                   placeholder="Enter your email or phone"
-                  value={emailOrPhone}
-                  onChange={(e) => setEmailOrPhone(e.target.value)}
                   className="pl-10"
-                  required
+                  {...register('login_field')}
                 />
               </div>
+              {errors.login_field && (
+                <p className="text-xs text-red-500">
+                  {errors.login_field.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -104,21 +108,23 @@ export function LoginEnhanced({ onSuccess, onNavigate }: LoginEnhancedProps) {
                   id="password"
                   type="password"
                   placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   className="pl-10"
-                  required
+                  {...register('password')}
                 />
               </div>
+              {errors.password && (
+                <p className="text-xs text-red-500">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="rounded border-gray-300"
+                  {...register('rememberMe')}
                 />
                 <span className="text-sm text-muted-foreground">
                   Remember me
@@ -139,7 +145,7 @@ export function LoginEnhanced({ onSuccess, onNavigate }: LoginEnhancedProps) {
             </Button>
 
             <div className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?
+              Don&apos;t have an account?{' '}
               <button
                 type="button"
                 onClick={() => onNavigate('signup')}
@@ -149,26 +155,6 @@ export function LoginEnhanced({ onSuccess, onNavigate }: LoginEnhancedProps) {
               </button>
             </div>
           </form>
-
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" type="button">
-              MTN Momo
-            </Button>
-            <Button variant="outline" type="button">
-              Telecel
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>

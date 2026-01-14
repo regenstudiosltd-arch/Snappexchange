@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Check } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -10,23 +11,34 @@ import {
   CardTitle,
   CardDescription,
 } from '@/src/components/ui/card';
+import { authService } from '@/src/services/auth.service';
 
 interface OTPVerificationProps {
   phoneNumber: string;
-  isVerifying: boolean;
-  onVerify: (code: string) => void;
-  onResend: () => void;
+  onVerifySuccess: () => void;
 }
 
 export function OTPVerification({
   phoneNumber,
-  isVerifying,
-  onVerify,
-  onResend,
+  onVerifySuccess,
 }: OTPVerificationProps) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [resendTimer, setResendTimer] = useState(60);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const verifyMutation = useMutation({
+    mutationFn: authService.verifyOtp,
+    onSuccess: () => {
+      onVerifySuccess();
+    },
+  });
+
+  const resendMutation = useMutation({
+    mutationFn: () => authService.resendOtp(phoneNumber),
+    onSuccess: () => {
+      setResendTimer(60);
+    },
+  });
 
   useEffect(() => {
     if (resendTimer > 0) {
@@ -46,7 +58,10 @@ export function OTPVerification({
       }
 
       if (newOtp.every((digit) => digit !== '') && index === 5) {
-        onVerify(newOtp.join(''));
+        verifyMutation.mutate({
+          phone_number: phoneNumber,
+          code: newOtp.join(''),
+        });
       }
     }
   };
@@ -61,8 +76,7 @@ export function OTPVerification({
   };
 
   const handleResendClick = () => {
-    setResendTimer(60);
-    onResend();
+    resendMutation.mutate();
   };
 
   return (
@@ -83,6 +97,24 @@ export function OTPVerification({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Error Message */}
+          {(verifyMutation.isError || resendMutation.isError) && (
+            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-center gap-2">
+              <AlertCircle className="h-4 w-4" />
+              {(
+                verifyMutation.error as {
+                  response?: { data?: { error?: string } };
+                }
+              )?.response?.data?.error || 'An error occurred'}
+            </div>
+          )}
+
+          {resendMutation.isSuccess && (
+            <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm text-center">
+              New code sent successfully!
+            </div>
+          )}
+
           <div className="flex justify-center gap-2">
             {otp.map((digit, index) => (
               <input
@@ -97,12 +129,12 @@ export function OTPVerification({
                 onChange={(e) => handleChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
                 className="w-12 h-14 text-center text-xl border-2 rounded-lg focus:border-[#DC2626] focus:outline-none bg-white transition-colors"
-                disabled={isVerifying}
+                disabled={verifyMutation.isPending}
               />
             ))}
           </div>
 
-          {isVerifying && (
+          {verifyMutation.isPending && (
             <div className="text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
               <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
               Verifying...
@@ -117,16 +149,22 @@ export function OTPVerification({
             ) : (
               <button
                 onClick={handleResendClick}
-                className="text-[#DC2626] hover:underline font-medium"
+                disabled={resendMutation.isPending}
+                className="text-[#DC2626] hover:underline font-medium disabled:opacity-50"
               >
-                Resend OTP
+                {resendMutation.isPending ? 'Sending...' : 'Resend OTP'}
               </button>
             )}
           </div>
 
           <Button
-            onClick={() => onVerify(otp.join(''))}
-            disabled={otp.some((digit) => !digit) || isVerifying}
+            onClick={() =>
+              verifyMutation.mutate({
+                phone_number: phoneNumber,
+                code: otp.join(''),
+              })
+            }
+            disabled={otp.some((digit) => !digit) || verifyMutation.isPending}
             className="w-full bg-[#DC2626] hover:bg-[#B91C1C] text-white"
           >
             Verify & Continue
