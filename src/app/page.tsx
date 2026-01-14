@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Header } from '@/src/components/Header';
 import { Hero } from '@/src/components/Hero';
 import { Services } from '@/src/components/Services';
@@ -13,14 +14,13 @@ import { Footer } from '@/src/components/Footer';
 
 export default function LandingPage() {
   const router = useRouter();
+  const { status } = useSession();
 
   useEffect(() => {
-    // If user is already logged in, send them straight to dashboard
-    const session = localStorage.getItem('snappx_session');
-    if (session) {
+    if (status === 'authenticated') {
       router.push('/dashboard');
     }
-  }, [router]);
+  }, [status, router]);
 
   const handleNavigate = (view: string) => {
     if (view === 'login') router.push('/login');
