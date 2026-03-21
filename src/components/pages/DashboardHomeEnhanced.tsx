@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   TrendingUp,
   Users,
@@ -32,6 +33,35 @@ import { CreateGroupModal } from '../modals/CreateGroupModal';
 import { CashOutModal } from '../modals/CashOutModal';
 import { JoinGroupModal } from '../modals/JoinGroupModal';
 import { TopUpWalletModal } from '../modals/TopUpWalletModal';
+import { authService } from '@/src/services/auth.service';
+import { cn } from '../ui/utils';
+
+interface DashboardResponse {
+  total_savings: string | number;
+  growth_text: string;
+  joined_groups: Array<{
+    id: number;
+    group_name: string;
+    current_members: number;
+    next_payout_days: number | null;
+    user_total_contribution: string | number;
+    total_saved: string | number;
+    progress_percentage: number;
+    contribution_amount: string | number;
+    frequency: string;
+  }>;
+}
+
+interface GoalsDashboardResponse {
+  total_saved: string | number;
+  goals: Array<{
+    id: number;
+    name: string;
+    target_amount: string | number;
+    current_saved: string | number;
+    progress_percentage: number;
+  }>;
+}
 
 interface DashboardHomeEnhancedProps {
   onNavigate: (page: string) => void;
@@ -46,72 +76,79 @@ export function DashboardHomeEnhanced({
   const [isCashOutOpen, setIsCashOutOpen] = useState(false);
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
   const [savingsExpanded, setSavingsExpanded] = useState(false);
-  const [walletBalance, setWalletBalance] = useState(850);
+  const [walletBalance] = useState(850);
 
-  const totalSavings = 7150;
-  const individualSavings = 1500;
-  const groupSavings = 5650;
+  const { data: dashboardData } = useQuery<DashboardResponse>({
+    queryKey: ['dashboard'],
+    queryFn: authService.dashboard,
+    staleTime: 1000 * 60 * 5,
+  });
 
-  // Scheduled contributions for auto-deduction
-  const scheduledContributions = [
-    {
-      id: '1',
-      groupName: 'Family Savings Circle',
-      amount: 200,
-      dueDate: '2025-12-10',
-      status: 'scheduled',
-      frequency: 'Monthly',
-    },
-    {
-      id: '2',
-      groupName: 'Business Partners',
-      amount: 150,
-      dueDate: '2025-12-12',
-      status: 'scheduled',
-      frequency: 'Bi-weekly',
-    },
-    {
-      id: '3',
-      groupName: 'Wedding Fund',
-      amount: 100,
-      dueDate: '2025-12-15',
-      status: 'scheduled',
-      frequency: 'Weekly',
-    },
-  ];
+  const { data: goalsData } = useQuery<GoalsDashboardResponse>({
+    queryKey: ['goals-dashboard'],
+    queryFn: authService.goalsDashboard,
+    staleTime: 1000 * 60 * 5,
+  });
 
-  const handleTopUpComplete = (amount: number, method: string) => {
-    setWalletBalance((prev) => prev + amount);
-    console.log(`Wallet topped up with GHS ${amount} via ${method}`);
-  };
+  const totalSavings = dashboardData?.total_savings
+    ? Number(dashboardData.total_savings)
+    : 0;
+
+  const growthText = dashboardData?.growth_text || '+0.0% from last month';
+
+  const groupSavings = (dashboardData?.joined_groups || []).reduce(
+    (sum, g) => sum + Number(g.user_total_contribution || 0),
+    0,
+  );
+  const individualSavings = goalsData?.total_saved
+    ? Number(goalsData.total_saved)
+    : 0;
+
+  // Savings Groups
+  const savingsGroups = (dashboardData?.joined_groups || []).map((g) => ({
+    name: g.group_name,
+    members: g.current_members,
+    totalSaved: Number(g.total_saved),
+    yourContribution: Number(g.user_total_contribution),
+    nextPayout: `${g.next_payout_days ?? 0} days`,
+    progress: g.progress_percentage,
+  }));
+
+  // Financial Goals
+  const goals = (goalsData?.goals || []).map((g) => ({
+    name: g.name,
+    target: Number(g.target_amount),
+    saved: Number(g.current_saved),
+    progress: g.progress_percentage,
+  }));
 
   const quickActions = [
     {
       icon: PlusCircle,
       label: 'Create Group',
-      color: 'text-cyan-600',
-      bgColor: 'bg-cyan-500/10',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       onClick: () => setIsCreateGroupOpen(true),
     },
     {
       icon: Users,
       label: 'Join Group',
-      color: 'text-teal-600',
-      bgColor: 'bg-teal-500/10',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       onClick: () => setIsJoinGroupOpen(true),
     },
     {
       icon: Lightbulb,
       label: 'AI Tips',
-      color: 'text-cyan-600',
-      bgColor: 'bg-cyan-500/10',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       onClick: () => onNavigate('AI Assistant'),
     },
     {
       icon: Bot,
       label: 'Chat Bot',
-      color: 'text-teal-600',
-      bgColor: 'bg-teal-500/10',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       onClick: () => onNavigate('Bot Integration'),
     },
   ];
@@ -140,36 +177,40 @@ export function DashboardHomeEnhanced({
     },
   ];
 
-  const savingsGroups = [
+  const scheduledContributions = [
     {
-      name: 'Family Savings Circle',
-      members: 8,
-      totalSaved: 16000,
-      yourContribution: 2000,
-      nextPayout: '5 days',
-      progress: 65,
+      id: '1',
+      groupName: 'Family Savings Circle',
+      amount: 200,
+      dueDate: '2025-12-10',
+      status: 'scheduled',
+      frequency: 'Monthly',
     },
     {
-      name: 'Business Partners',
-      members: 12,
-      totalSaved: 45000,
-      yourContribution: 3750,
-      nextPayout: '12 days',
-      progress: 80,
+      id: '2',
+      groupName: 'Business Partners',
+      amount: 150,
+      dueDate: '2025-12-12',
+      status: 'scheduled',
+      frequency: 'Bi-weekly',
     },
     {
-      name: 'Wedding Fund',
-      members: 6,
-      totalSaved: 8400,
-      yourContribution: 1400,
-      nextPayout: '2 days',
-      progress: 45,
+      id: '3',
+      groupName: 'Wedding Fund',
+      amount: 100,
+      dueDate: '2025-12-15',
+      status: 'scheduled',
+      frequency: 'Weekly',
     },
   ];
 
+  const handleTopUpComplete = (amount: number, method: string) => {
+    console.log(`Wallet topped up with GHS ${amount} via ${method}`);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Total Savings Card */}
+      {/* Total Savings Card – kept very close to original look */}
       <Card className="bg-linear-to-br from-cyan-500 to-teal-600 text-white rounded-2xl">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -198,7 +239,7 @@ export function DashboardHomeEnhanced({
               </div>
               <div className="flex items-center gap-2 text-white/90">
                 <TrendingUp className="h-4 w-4" />
-                <span className="text-sm">+12.5% from last month</span>
+                <span className="text-sm">{growthText}</span>
               </div>
             </div>
 
@@ -236,9 +277,9 @@ export function DashboardHomeEnhanced({
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
+      {/* Quick Actions – kept very close to original */}
       <div>
-        <h3 className="mb-4 text-[16px] md:text-[24px] font-medium">
+        <h3 className="mb-4 text-xl md:text-2xl font-semibold text-foreground">
           Quick Actions
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -248,14 +289,19 @@ export function DashboardHomeEnhanced({
               <button
                 key={index}
                 onClick={action.onClick}
-                className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 hover:border-cyan-500 transition-all hover:shadow-lg group"
+                className="flex flex-col items-center gap-3 p-6 rounded-xl border border-border hover:border-primary/50 transition-all hover:shadow-md group bg-card"
               >
                 <div
-                  className={`w-14 h-14 rounded-full ${action.bgColor} flex items-center justify-center group-hover:scale-110 transition-transform`}
+                  className={cn(
+                    'w-14 h-14 rounded-full flex items-center justify-center transition-transform group-hover:scale-110',
+                    action.bgColor,
+                  )}
                 >
-                  <Icon className={`h-7 w-7 ${action.color}`} />
+                  <Icon className={cn('h-7 w-7', action.color)} />
                 </div>
-                <span className="text-sm text-center">{action.label}</span>
+                <span className="text-sm text-center font-medium text-foreground">
+                  {action.label}
+                </span>
               </button>
             );
           })}
@@ -266,20 +312,26 @@ export function DashboardHomeEnhanced({
         {/* Savings Groups */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-[16px] md:text-[24px] font-medium">
+            <h3 className="text-xl md:text-2xl font-semibold text-foreground">
               Your Savings Groups
             </h3>
-            <Button variant="ghost" size="sm" className="text-cyan-600">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary hover:text-primary/90"
+            >
               View All
             </Button>
           </div>
-
           {savingsGroups.map((group, index) => (
-            <Card key={index} className="hover:shadow-md transition-shadow">
-              <CardHeader>
+            <Card
+              key={index}
+              className="hover:shadow-md transition-shadow bg-card border-border"
+            >
+              <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="text-lg text-[16px] md:text-[20px] font-medium">
+                    <CardTitle className="text-lg font-medium text-foreground">
                       {group.name}
                     </CardTitle>
                     <CardDescription>{group.members} members</CardDescription>
@@ -288,33 +340,39 @@ export function DashboardHomeEnhanced({
                     <div className="text-sm text-muted-foreground">
                       Total Saved
                     </div>
-                    <div className="text-lg">
+                    <div className="text-lg font-semibold text-foreground">
                       ₵{group.totalSaved.toLocaleString()}
                     </div>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-5">
                 <div>
                   <div className="flex items-center justify-between text-sm mb-2">
                     <span className="text-muted-foreground">Progress</span>
-                    <span>{group.progress}%</span>
+                    <span className="font-medium">{group.progress}%</span>
                   </div>
-                  <Progress value={group.progress} className="h-2" />
+                  <Progress
+                    value={group.progress}
+                    className="h-2 dark:bg-gray-500"
+                  />
                 </div>
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-2 gap-6 text-sm">
                   <div>
                     <div className="text-muted-foreground mb-1">
                       Your Contribution
                     </div>
-                    <div>₵{group.yourContribution.toLocaleString()}</div>
+                    <div className="font-medium text-foreground">
+                      ₵{group.yourContribution.toLocaleString()}
+                    </div>
                   </div>
                   <div>
                     <div className="text-muted-foreground mb-1">
                       Next Payout
                     </div>
-                    <div className="text-teal-600">{group.nextPayout}</div>
+                    <div className="text-primary font-medium">
+                      {group.nextPayout}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -324,50 +382,50 @@ export function DashboardHomeEnhanced({
 
         {/* Recent Activity */}
         <div className="space-y-4">
-          <h3 className="text-[16px] md:text-[24px] font-medium">
+          <h3 className="text-xl md:text-2xl font-semibold text-foreground">
             Recent Activity
           </h3>
-          <Card>
+          <Card className="bg-card border-border">
             <CardContent className="p-0">
               {recentActivity.map((activity, index) => (
                 <div
                   key={index}
-                  className={`p-4 ${
-                    index < recentActivity.length - 1 ? 'border-b' : ''
-                  }`}
+                  className={cn(
+                    'p-4',
+                    index < recentActivity.length - 1 &&
+                      'border-b border-border',
+                  )}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-4">
                     <div
-                      className={`p-2 rounded-lg ${
+                      className={cn(
+                        'p-2.5 rounded-lg',
                         activity.type === 'contribution'
-                          ? 'bg-cyan-500/10'
-                          : 'bg-teal-500/10'
-                      }`}
+                          ? 'bg-primary/10'
+                          : 'bg-teal-500/10 dark:bg-teal-900/30',
+                      )}
                     >
                       {activity.type === 'contribution' ? (
-                        <ArrowUpRight
-                          className={`h-4 w-4 ${
-                            activity.type === 'contribution'
-                              ? 'text-cyan-600'
-                              : 'text-teal-600'
-                          }`}
-                        />
+                        <ArrowUpRight className="h-5 w-5 text-primary" />
                       ) : (
-                        <ArrowDownRight className="h-4 w-4 text-teal-600" />
+                        <ArrowDownRight className="h-5 w-5 text-teal-600 dark:text-teal-400" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm truncate">{activity.group}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="font-medium text-foreground truncate">
+                        {activity.group}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
                         {activity.date}
                       </div>
                     </div>
                     <div
-                      className={`text-sm ${
+                      className={cn(
+                        'text-sm font-medium',
                         activity.type === 'contribution'
-                          ? 'text-cyan-600'
-                          : 'text-teal-600'
-                      }`}
+                          ? 'text-primary'
+                          : 'text-teal-600 dark:text-teal-400',
+                      )}
                     >
                       {activity.type === 'contribution' ? '-' : '+'}₵
                       {activity.amount}
@@ -381,14 +439,14 @@ export function DashboardHomeEnhanced({
       </div>
 
       {/* Financial Goals Preview */}
-      <Card>
-        <CardHeader>
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-[16px] md:text-[20px] font-medium">
+              <CardTitle className="text-lg md:text-xl font-medium text-foreground">
                 Financial Goals
               </CardTitle>
-              <CardDescription className="text-md text-muted-foreground">
+              <CardDescription className="text-muted-foreground">
                 Track your personal savings targets
               </CardDescription>
             </div>
@@ -404,27 +462,23 @@ export function DashboardHomeEnhanced({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              {
-                name: 'Emergency Fund',
-                target: 5000,
-                saved: 3200,
-                progress: 64,
-              },
-              { name: 'New Laptop', target: 3000, saved: 2100, progress: 70 },
-              { name: 'Vacation', target: 4000, saved: 1200, progress: 30 },
-            ].map((goal, index) => (
+            {goals.map((goal, index) => (
               <div
                 key={index}
-                className="p-4 rounded-lg border hover:border-cyan-500 transition-colors cursor-pointer"
+                className="p-5 rounded-lg border border-border hover:border-primary/50 transition-colors cursor-pointer bg-card"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm">{goal.name}</span>
+                  <span className="text-sm font-medium text-foreground">
+                    {goal.name}
+                  </span>
                   <span className="text-xs text-muted-foreground">
                     {goal.progress}%
                   </span>
                 </div>
-                <Progress value={goal.progress} className="h-2 mb-2" />
+                <Progress
+                  value={goal.progress}
+                  className="h-2 mb-3 dark:bg-gray-500"
+                />
                 <div className="text-xs text-muted-foreground">
                   ₵{goal.saved.toLocaleString()} of ₵
                   {goal.target.toLocaleString()}
@@ -437,39 +491,38 @@ export function DashboardHomeEnhanced({
 
       {/* Scheduled Contributions & Wallet Balance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Scheduled Contributions */}
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-cyan-600" />
+            <div className="flex items-center gap-3">
+              <Calendar className="h-5 w-5 text-primary" />
               <div>
-                <CardTitle className="text-[16px] md:text-[20px] font-medium">
+                <CardTitle className="text-lg md:text-xl font-medium text-foreground">
                   Scheduled Contributions
                 </CardTitle>
-                <CardDescription className="text-md text-muted-foreground">
+                <CardDescription className="text-muted-foreground">
                   Auto-deduction from wallet
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             {scheduledContributions.map((contribution) => (
               <div
                 key={contribution.id}
-                className="p-3 rounded-lg border bg-linear-to-r from-cyan-50 to-teal-50 border-cyan-200"
+                className="p-4 rounded-lg border border-border bg-muted/30"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-medium text-foreground">
                     {contribution.groupName}
                   </span>
-                  <div className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                  <div className="flex items-center gap-1.5 text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full">
                     <Clock className="h-3 w-3" />
                     {contribution.status}
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <div className="text-muted-foreground">
-                    <span className="text-cyan-600 font-semibold">
+                    <span className="text-primary font-medium">
                       GHS {contribution.amount}
                     </span>{' '}
                     • {contribution.frequency}
@@ -477,17 +530,20 @@ export function DashboardHomeEnhanced({
                   <div className="text-xs text-muted-foreground">
                     {new Date(contribution.dueDate).toLocaleDateString(
                       'en-US',
-                      { month: 'short', day: 'numeric' }
+                      {
+                        month: 'short',
+                        day: 'numeric',
+                      },
                     )}
                   </div>
                 </div>
               </div>
             ))}
-            <div className="pt-2 border-t">
-              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
-                <div className="text-xs text-blue-900">
-                  <p className="font-semibold mb-1">Auto-Deduction Active</p>
+            <div className="pt-3 border-t border-border">
+              <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <CheckCircle2 className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="text-sm text-primary/90">
+                  <p className="font-medium mb-1">Auto-Deduction Active</p>
                   <p>
                     Contributions will be automatically deducted from your
                     wallet on due dates. Ensure sufficient balance to avoid
@@ -533,8 +589,6 @@ export function DashboardHomeEnhanced({
                   Available for auto-deductions
                 </div>
               </div>
-
-              {/* Upcoming Deductions */}
               <div className="pt-4 border-t border-white/20">
                 <div className="text-sm text-white/80 mb-2">
                   Upcoming Deductions
@@ -550,8 +604,6 @@ export function DashboardHomeEnhanced({
                   contributions
                 </div>
               </div>
-
-              {/* Balance Status */}
               {walletBalance >=
               scheduledContributions.reduce((sum, c) => sum + c.amount, 0) ? (
                 <div className="flex items-start gap-2 p-3 bg-green-500/20 border border-green-300/30 rounded-lg">
@@ -572,7 +624,6 @@ export function DashboardHomeEnhanced({
                   </div>
                 </div>
               )}
-
               <div className="flex gap-2 pt-2">
                 <Button
                   variant="secondary"
@@ -592,16 +643,12 @@ export function DashboardHomeEnhanced({
       <CreateGroupModal
         isOpen={isCreateGroupOpen}
         onClose={() => setIsCreateGroupOpen(false)}
-        onComplete={(groupData) => {
-          console.log('Group created:', groupData);
-        }}
+        onComplete={(groupData) => console.log('Group created:', groupData)}
       />
-
       <JoinGroupModal
         isOpen={isJoinGroupOpen}
         onClose={() => setIsJoinGroupOpen(false)}
       />
-
       <CashOutModal
         isOpen={isCashOutOpen}
         onClose={() => setIsCashOutOpen(false)}
@@ -612,7 +659,6 @@ export function DashboardHomeEnhanced({
           name: 'Kwame Asante',
         }}
       />
-
       <TopUpWalletModal
         isOpen={isTopUpOpen}
         onClose={() => setIsTopUpOpen(false)}
