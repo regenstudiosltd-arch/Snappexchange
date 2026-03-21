@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Check, AlertCircle } from 'lucide-react';
+import { Check, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -12,6 +12,7 @@ import {
   CardDescription,
 } from '@/src/components/ui/card';
 import { authService } from '@/src/services/auth.service';
+import { cn } from '../ui/utils';
 
 interface OTPVerificationProps {
   phoneNumber: string;
@@ -68,7 +69,7 @@ export function OTPVerification({
 
   const handleKeyDown = (
     index: number,
-    e: React.KeyboardEvent<HTMLInputElement>
+    e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
@@ -80,42 +81,48 @@ export function OTPVerification({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#DC2626]/5 via-[#F59E0B]/5 to-[#059669]/5 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-[#DC2626] via-[#F59E0B] to-[#059669]">
-              <Check className="h-8 w-8 text-white" />
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-8">
+      <Card className="w-full max-w-md bg-card border-border rounded-2xl shadow-xl">
+        <CardHeader className="text-center pb-6 pt-10">
+          <div className="flex justify-center mb-6">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Check className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Verify Your Phone</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl md:text-3xl font-bold text-foreground">
+            Verify Your Phone
+          </CardTitle>
+          <CardDescription className="text-muted-foreground mt-2">
             We&apos;ve sent a 6-digit code to <br />
             <span className="text-foreground font-medium">
               {phoneNumber || '...'}
             </span>
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Error Message */}
+
+        <CardContent className="space-y-6 px-6 pb-10">
+          {/* Error / Success Messages */}
           {(verifyMutation.isError || resendMutation.isError) && (
-            <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-center gap-2">
-              <AlertCircle className="h-4 w-4" />
+            <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm flex items-center justify-center gap-3">
+              <AlertCircle className="h-5 w-5 shrink-0" />
               {(
                 verifyMutation.error as {
                   response?: { data?: { error?: string } };
                 }
-              )?.response?.data?.error || 'An error occurred'}
+              )?.response?.data?.error ||
+                resendMutation.error?.message ||
+                'An error occurred'}
             </div>
           )}
 
           {resendMutation.isSuccess && (
-            <div className="p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm text-center">
+            <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 text-primary text-sm text-center">
               New code sent successfully!
             </div>
           )}
 
-          <div className="flex justify-center gap-2">
+          {/* OTP Inputs */}
+          <div className="flex justify-center gap-3 md:gap-4">
             {otp.map((digit, index) => (
               <input
                 key={index}
@@ -128,7 +135,10 @@ export function OTPVerification({
                 value={digit}
                 onChange={(e) => handleChange(index, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
-                className="w-12 h-14 text-center text-xl border-2 rounded-lg focus:border-[#DC2626] focus:outline-none bg-white transition-colors"
+                className={cn(
+                  'w-12 h-14 md:w-14 md:h-16 text-center text-2xl font-medium border-2 rounded-lg focus:border-primary focus:ring-primary/30 focus:outline-none bg-background transition-colors',
+                  verifyMutation.isPending && 'opacity-70 cursor-not-allowed',
+                )}
                 disabled={verifyMutation.isPending}
               />
             ))}
@@ -136,12 +146,13 @@ export function OTPVerification({
 
           {verifyMutation.isPending && (
             <div className="text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
-              <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
               Verifying...
             </div>
           )}
 
-          <div className="text-center text-sm">
+          {/* Resend */}
+          <div className="text-center text-sm pt-2">
             {resendTimer > 0 ? (
               <span className="text-muted-foreground">
                 Resend code in {resendTimer}s
@@ -150,13 +161,17 @@ export function OTPVerification({
               <button
                 onClick={handleResendClick}
                 disabled={resendMutation.isPending}
-                className="text-[#DC2626] hover:underline font-medium disabled:opacity-50"
+                className={cn(
+                  'text-primary hover:underline font-medium',
+                  resendMutation.isPending && 'opacity-50 cursor-not-allowed',
+                )}
               >
                 {resendMutation.isPending ? 'Sending...' : 'Resend OTP'}
               </button>
             )}
           </div>
 
+          {/* Verify Button */}
           <Button
             onClick={() =>
               verifyMutation.mutate({
@@ -165,7 +180,7 @@ export function OTPVerification({
               })
             }
             disabled={otp.some((digit) => !digit) || verifyMutation.isPending}
-            className="w-full bg-[#DC2626] hover:bg-[#B91C1C] text-white"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11 font-medium mt-4"
           >
             Verify & Continue
           </Button>
