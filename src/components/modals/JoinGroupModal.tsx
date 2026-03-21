@@ -1,9 +1,19 @@
 'use client';
 
-import { useState } from 'react';
-import { Search, Users, DollarSign, Calendar, Check } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  Search,
+  Users,
+  DollarSign,
+  Calendar,
+  Check,
+  Loader2,
+  AlertCircle,
+  ArrowLeft,
+} from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -18,95 +28,109 @@ import {
   CardHeader,
   CardTitle,
 } from '../ui/card';
+import { Alert, AlertDescription } from '../ui/alert';
+import { apiClient } from '@/src/lib/axios';
+import { AxiosError } from 'axios';
 
-interface JoinGroupModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface Group {
+  id: number;
+  group_name: string;
+  admin_name: string;
+  current_members: number;
+  expected_members: number;
+  contribution_amount: string;
+  frequency: string;
+  description: string;
 }
 
-const publicGroups = [
-  {
-    id: '1',
-    name: 'Tech Professionals Circle',
-    admin: 'Kwame Mensah',
-    members: 12,
-    maxMembers: 15,
-    contributionAmount: 500,
-    frequency: 'Monthly',
-    description:
-      'For tech workers saving towards professional development and business opportunities',
-    nextPayout: '15 days',
-  },
-  {
-    id: '2',
-    name: 'Women Entrepreneurs Fund',
-    admin: 'Ama Osei',
-    members: 8,
-    maxMembers: 10,
-    contributionAmount: 300,
-    frequency: 'Weekly',
-    description: 'Supporting women-owned businesses through collective savings',
-    nextPayout: '5 days',
-  },
-  {
-    id: '3',
-    name: 'University Students Savings',
-    admin: 'Kofi Antwi',
-    members: 20,
-    maxMembers: 25,
-    contributionAmount: 100,
-    frequency: 'Monthly',
-    description:
-      'Students helping students build financial discipline and savings habits',
-    nextPayout: '20 days',
-  },
-  {
-    id: '4',
-    name: 'Market Traders Union',
-    admin: 'Abena Frimpong',
-    members: 15,
-    maxMembers: 20,
-    contributionAmount: 200,
-    frequency: 'Weekly',
-    description: 'Market traders pooling resources for business expansion',
-    nextPayout: '3 days',
-  },
-];
-
-export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
+export function JoinGroupModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  // Data State
+  const [groups, setGroups] = useState<Group[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+
+  // UI State
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [requestSent, setRequestSent] = useState(false);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
 
-  const filteredGroups = publicGroups.filter(
-    (group) =>
-      group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      group.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Form State
+  const [joiningId, setJoiningId] = useState<number | null>(null);
+  const [joinReason, setJoinReason] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
-  const handleJoinRequest = () => {
-    setRequestSent(true);
-    setTimeout(() => {
-      setRequestSent(false);
+  const fetchGroups = useCallback(async (query: string = '') => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.get('/accounts/groups/all/', {
+        params: { search: query },
+      });
+      setGroups(response.data.results || response.data);
+    } catch (err) {
+      const axiosError = err as AxiosError<{ detail?: string }>;
+      setError(
+        axiosError.response?.data?.detail || 'Failed to fetch savings groups',
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchGroups(searchQuery);
+    } else {
+      // Reset state when modal closes
       setShowDetails(false);
-      setSelectedGroup(null);
+      setSelectedGroupId(null);
+      setJoinReason('');
+      setTermsAccepted(false);
+    }
+  }, [isOpen, searchQuery, fetchGroups]);
+
+  const handleJoinRequest = async (groupId: number) => {
+    if (!termsAccepted) return;
+
+    setJoiningId(groupId);
+    try {
+      const idempotencyKey = self.crypto.randomUUID();
+      const response = await apiClient.post(
+        `/accounts/groups/${groupId}/request_join/`,
+        { reason: joinReason },
+        { headers: { 'X-Idempotency-Key': idempotencyKey } },
+      );
+
+      alert(response.data.message || 'Join request sent successfully!');
       onClose();
-    }, 2000);
+    } catch (err) {
+      const axiosError = err as AxiosError<{ error?: string; detail?: string }>;
+      alert(
+        axiosError.response?.data?.error ||
+          axiosError.response?.data?.detail ||
+          'Failed to join',
+      );
+    } finally {
+      setJoiningId(null);
+    }
   };
 
-  const selectedGroupData = publicGroups.find((g) => g.id === selectedGroup);
+  const selectedGroupData = groups.find((g) => g.id === selectedGroupId);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[97vh] overflow-y-auto no-scrollbar">
+      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto no-scrollbar bg-card border-border">
         <DialogHeader>
-          <DialogTitle>
-            {showDetails && selectedGroupData
-              ? 'Group Details'
-              : 'Join a Savings Group'}
+          <DialogTitle className="text-2xl font-bold text-foreground">
+            {showDetails ? 'Group Details' : 'Join a Savings Group'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-muted-foreground">
             {showDetails
               ? 'Review group information before joining'
               : 'Browse and join public savings groups'}
@@ -114,188 +138,237 @@ export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
         </DialogHeader>
 
         {!showDetails ? (
-          <div className="space-y-4 py-4">
-            {/* Search */}
+          /* LIST VIEW */
+          <div className="space-y-6 py-4">
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
+                placeholder="Search groups..."
+                className="pl-10 h-12 bg-background"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search groups..."
-                className="pl-10"
               />
             </div>
 
-            {/* Groups List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredGroups.map((group) => (
-                <Card
-                  key={group.id}
-                  className="hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => {
-                    setSelectedGroup(group.id);
-                    setShowDetails(true);
-                  }}
-                >
-                  <CardHeader>
-                    <CardTitle className="text-lg">{group.name}</CardTitle>
-                    <CardDescription>Admin: {group.admin}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {group.description}
-                    </p>
-
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>
-                          {group.members}/{group.maxMembers} members
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        <span>₵{group.contributionAmount}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        {group.frequency}
-                      </span>
-                      <span className="text-[#059669]">
-                        Next: {group.nextPayout}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {filteredGroups.length === 0 && (
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
-                  No groups found matching your search
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground">
+                  Finding active circles...
                 </p>
+              </div>
+            ) : error ? (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {groups.length > 0 ? (
+                  groups.map((group) => (
+                    <Card
+                      key={group.id}
+                      className="hover:shadow-md transition-all cursor-pointer bg-card border-border hover:border-primary/50"
+                      onClick={() => {
+                        setSelectedGroupId(group.id);
+                        setShowDetails(true);
+                      }}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-lg font-semibold text-foreground">
+                            {group.group_name}
+                          </CardTitle>
+                          <span className="text-xs font-bold uppercase tracking-wide bg-primary/10 text-primary px-2.5 py-1 rounded-full">
+                            {group.frequency}
+                          </span>
+                        </div>
+                        <CardDescription className="mt-1">
+                          Admin: {group.admin_name}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {group.description ||
+                            'Join this group to start your savings journey together.'}
+                        </p>
+                        <div className="flex items-center justify-between text-sm pt-3 border-t border-border">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Users className="h-4 w-4 text-primary" />
+                            <span>
+                              {group.current_members}/{group.expected_members}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 font-medium text-foreground">
+                            <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <span>
+                              ₵
+                              {parseFloat(
+                                group.contribution_amount,
+                              ).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-xl bg-muted/30">
+                    <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground font-medium">
+                      No public groups match your search.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
         ) : (
+          /* DETAIL VIEW */
           selectedGroupData && (
             <div className="space-y-6 py-4">
-              {requestSent ? (
-                <div className="text-center py-12">
-                  <div className="mx-auto w-16 h-16 rounded-full bg-[#059669]/10 flex items-center justify-center mb-4">
-                    <Check className="h-8 w-8 text-[#059669]" />
+              {/* Header Card */}
+              <div className="bg-linear-to-r from-cyan-600 to-teal-500 rounded-xl p-6 text-primary-foreground shadow-md">
+                <h3 className="text-2xl font-bold mb-1 dark:text-white">
+                  {selectedGroupData.group_name}
+                </h3>
+                <p className="opacity-90 text-sm dark:text-white">
+                  Administered by {selectedGroupData.admin_name}
+                </p>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="text-center p-5 bg-card border border-border rounded-xl">
+                  <Users className="h-6 w-6 mx-auto mb-2 text-primary" />
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Members
                   </div>
-                  <h3 className="text-xl mb-2">Request Sent!</h3>
-                  <p className="text-muted-foreground">
-                    The group admin will review your request
-                  </p>
+                  <div className="text-lg font-bold text-foreground">
+                    {selectedGroupData.current_members} /{' '}
+                    {selectedGroupData.expected_members}
+                  </div>
                 </div>
-              ) : (
-                <>
-                  {/* Group Header */}
-                  <div className="bg-linear-to-br from-[#DC2626]/10 via-[#F59E0B]/10 to-[#059669]/10 rounded-lg p-6">
-                    <h3 className="text-2xl mb-2">{selectedGroupData.name}</h3>
-                    <p className="text-muted-foreground">
-                      Administered by {selectedGroupData.admin}
-                    </p>
-                  </div>
 
-                  {/* Group Details */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 border rounded-lg">
-                      <Users className="h-6 w-6 mx-auto mb-2 text-[#DC2626]" />
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Members
-                      </div>
-                      <div>
-                        {selectedGroupData.members}/
-                        {selectedGroupData.maxMembers}
-                      </div>
-                    </div>
-                    <div className="text-center p-4 border rounded-lg">
-                      <DollarSign className="h-6 w-6 mx-auto mb-2 text-[#F59E0B]" />
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Contribution
-                      </div>
-                      <div>₵{selectedGroupData.contributionAmount}</div>
-                    </div>
-                    <div className="text-center p-4 border rounded-lg">
-                      <Calendar className="h-6 w-6 mx-auto mb-2 text-[#059669]" />
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Frequency
-                      </div>
-                      <div>{selectedGroupData.frequency}</div>
-                    </div>
-                    <div className="text-center p-4 border rounded-lg">
-                      <Calendar className="h-6 w-6 mx-auto mb-2 text-[#DC2626]" />
-                      <div className="text-sm text-muted-foreground mb-1">
-                        Next Payout
-                      </div>
-                      <div>{selectedGroupData.nextPayout}</div>
-                    </div>
+                <div className="text-center p-5 bg-card border border-border rounded-xl">
+                  <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-600 dark:text-green-400" />
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Contribution
                   </div>
-
-                  {/* Description */}
-                  <div>
-                    <h4 className="mb-2">About This Group</h4>
-                    <p className="text-muted-foreground">
-                      {selectedGroupData.description}
-                    </p>
+                  <div className="text-lg font-bold text-foreground">
+                    ₵
+                    {parseFloat(
+                      selectedGroupData.contribution_amount,
+                    ).toLocaleString()}
                   </div>
+                </div>
 
-                  {/* Group Rules */}
-                  <div>
-                    <h4 className="mb-2">Group Rules</h4>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li>• Contributions must be made on time</li>
-                      <li>• Respect all group members and admin decisions</li>
-                      <li>• Payouts follow a fair rotation system</li>
-                      <li>• Missing 2 contributions results in removal</li>
-                      <li>• All communication must be respectful</li>
-                    </ul>
+                <div className="text-center p-5 bg-card border border-border rounded-xl">
+                  <Calendar className="h-6 w-6 mx-auto mb-2 text-orange-600 dark:text-orange-400" />
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Frequency
                   </div>
-
-                  {/* Terms Acceptance */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <label className="flex items-start gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        className="mt-1 rounded border-gray-300"
-                        required
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        I have read and agree to abide by the group rules and
-                        contribution schedule. I understand that failure to
-                        contribute on time may result in removal from the group.
-                      </span>
-                    </label>
+                  <div className="text-lg font-bold capitalize text-foreground">
+                    {selectedGroupData.frequency}
                   </div>
+                </div>
+              </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setShowDetails(false);
-                        setSelectedGroup(null);
-                      }}
-                      className="flex-1"
-                    >
-                      Back to Groups
-                    </Button>
-                    <Button
-                      onClick={handleJoinRequest}
-                      className="flex-1 bg-[#DC2626] hover:bg-[#B91C1C]"
-                    >
+              {/* Description */}
+              <div>
+                <h4 className="font-semibold text-foreground mb-2">
+                  About This Group
+                </h4>
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  {selectedGroupData.description ||
+                    'No description provided for this group.'}
+                </p>
+              </div>
+
+              {/* Rules Section */}
+              <div className="p-5 bg-muted/40 border border-border rounded-xl">
+                <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  Group Rules
+                </h4>
+                <ul className="space-y-2.5 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold">•</span>
+                    Contributions must be made on time to ensure rotation
+                    integrity.
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold">•</span>
+                    Payouts follow the system-generated rotation schedule.
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold">•</span>
+                    Missing multiple contributions may lead to administrative
+                    removal.
+                  </li>
+                </ul>
+              </div>
+
+              {/* User Input Section */}
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    Introduction (Optional)
+                  </label>
+                  <Textarea
+                    placeholder="Tell the admin why you'd like to join this circle..."
+                    value={joinReason}
+                    onChange={(e) => setJoinReason(e.target.value)}
+                    className="min-h-25 bg-background"
+                  />
+                </div>
+
+                <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-xl border border-border">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                  />
+                  <label
+                    htmlFor="terms"
+                    className="text-sm text-muted-foreground leading-normal cursor-pointer"
+                  >
+                    I have read and agree to abide by the group rules and
+                    contribution schedule. I understand that financial
+                    commitment is essential for the circle&apos;s success.
+                  </label>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="flex gap-3 pt-5 border-t border-border">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowDetails(false)}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Groups
+                </Button>
+
+                <Button
+                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                  disabled={
+                    !termsAccepted || joiningId === selectedGroupData.id
+                  }
+                  onClick={() => handleJoinRequest(selectedGroupData.id)}
+                >
+                  {joiningId === selectedGroupData.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <>
+                      <Check className="h-4 w-4 mr-2" />
                       Send Join Request
-                    </Button>
-                  </div>
-                </>
-              )}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           )
         )}
