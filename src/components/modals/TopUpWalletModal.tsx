@@ -1,5 +1,3 @@
-// src/components/modals/TopUpWalletModal.tsx
-
 'use client';
 
 import { useState } from 'react';
