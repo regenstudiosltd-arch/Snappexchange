@@ -1,4 +1,5 @@
 'use client';
+
 import { useState, useRef, useEffect } from 'react';
 import {
   Send,
@@ -11,6 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { cn } from '../ui/utils';
 
 interface Message {
   id: string;
@@ -23,20 +25,17 @@ const presetQuestions = [
   {
     icon: Lightbulb,
     text: 'Budgeting Tips',
-    color: 'text-[#F59E0B]',
-    bgColor: 'bg-[#F59E0B]/10',
+    variant: 'amber',
   },
   {
     icon: TrendingUp,
     text: 'Saving Advice',
-    color: 'text-[#059669]',
-    bgColor: 'bg-[#059669]/10',
+    variant: 'emerald',
   },
   {
     icon: DollarSign,
     text: 'Investment 101',
-    color: 'text-[#DC2626]',
-    bgColor: 'bg-[#DC2626]/10',
+    variant: 'rose',
   },
 ];
 
@@ -65,7 +64,7 @@ export function AIAssistantPage() {
 
   const createMessage = (
     role: 'user' | 'assistant',
-    content: string
+    content: string,
   ): Message => ({
     id: new Date().getTime().toString(),
     role,
@@ -85,18 +84,16 @@ export function AIAssistantPage() {
     const text = messageText || inputMessage;
     if (!text.trim()) return;
 
-    // Add user message
     const userMessage = createMessage('user', text);
     setMessages((prev) => [...prev, userMessage]);
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate AI response
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // Generate AI response
     let aiResponse = '';
     const lowerText = text.toLowerCase();
+
     if (lowerText.includes('budget')) {
       aiResponse = aiResponses['budgeting tips'];
     } else if (lowerText.includes('sav')) {
@@ -122,14 +119,44 @@ export function AIAssistantPage() {
     handleSendMessage(question);
   };
 
+  // Map variant names to theme-aware classes
+  const getPresetStyle = (variant: string) => {
+    switch (variant) {
+      case 'amber':
+        return {
+          icon: 'text-amber-600 dark:text-amber-400',
+          bg: 'bg-amber-100 dark:bg-amber-950/30 hover:bg-amber-200 dark:hover:bg-amber-900/40',
+          border: 'border-amber-300/50 dark:border-amber-700/50',
+        };
+      case 'emerald':
+        return {
+          icon: 'text-emerald-600 dark:text-emerald-400',
+          bg: 'bg-emerald-100 dark:bg-emerald-950/30 hover:bg-emerald-200 dark:hover:bg-emerald-900/40',
+          border: 'border-emerald-300/50 dark:border-emerald-700/50',
+        };
+      case 'rose':
+        return {
+          icon: 'text-rose-600 dark:text-rose-400',
+          bg: 'bg-rose-100 dark:bg-rose-950/30 hover:bg-rose-200 dark:hover:bg-rose-900/40',
+          border: 'border-rose-300/50 dark:border-rose-700/50',
+        };
+      default:
+        return {
+          icon: 'text-primary',
+          bg: 'bg-primary/10 hover:bg-primary/20',
+          border: 'border-primary/30',
+        };
+    }
+  };
+
   return (
-    <div className="h-[calc(100vh-12rem)] flex flex-col">
+    <div className="h-[calc(100vh-12rem)] flex flex-col space-y-4">
       {/* Header */}
-      <Card className="mb-4">
-        <CardHeader>
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-linear-to-br from-[#DC2626] via-[#F59E0B] to-[#059669] flex items-center justify-center">
-              <Bot className="h-6 w-6 text-white" />
+            <div className="w-12 h-12 rounded-full bg-linear-to-br from-primary via-primary/80 to-accent flex items-center justify-center shadow-sm">
+              <Bot className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
               <CardTitle>AI Financial Assistant</CardTitle>
@@ -140,56 +167,69 @@ export function AIAssistantPage() {
           </div>
         </CardHeader>
       </Card>
+
       {/* Preset Questions */}
       {messages.length <= 1 && (
-        <div className="mb-4">
-          <p className="text-sm text-muted-foreground mb-3">Quick topics:</p>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Quick topics:</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {presetQuestions.map((preset, index) => {
               const Icon = preset.icon;
+              const style = getPresetStyle(preset.variant);
               return (
                 <button
                   key={index}
                   onClick={() => handlePresetQuestion(preset.text)}
-                  className={`flex items-center gap-3 p-4 rounded-lg border-2 hover:border-[#F59E0B]/50 transition-all ${preset.bgColor}`}
+                  className={cn(
+                    'flex items-center gap-3 p-4 rounded-xl border transition-all',
+                    style.border,
+                    style.bg,
+                  )}
                 >
-                  <Icon className={`h-5 w-5 ${preset.color}`} />
-                  <span>{preset.text}</span>
+                  <Icon className={cn('h-5 w-5', style.icon)} />
+                  <span className="font-medium">{preset.text}</span>
                 </button>
               );
             })}
           </div>
         </div>
       )}
-      {/* Messages */}
-      <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+
+      {/* Chat Area */}
+      <Card className="flex-1 flex flex-col overflow-hidden bg-card border-border">
+        <CardContent className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5">
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex gap-3 ${
-                message.role === 'user' ? 'justify-end' : 'justify-start'
-              }`}
+              className={cn(
+                'flex gap-3',
+                message.role === 'user' ? 'justify-end' : 'justify-start',
+              )}
             >
               {message.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-linear-to-br from-[#DC2626] via-[#F59E0B] to-[#059669] flex items-center justify-center shrink-0">
-                  <Bot className="h-4 w-4 text-white" />
+                <div className="w-8 h-8 rounded-full bg-linear-to-br from-primary via-primary/80 to-accent flex items-center justify-center shrink-0 shadow-sm">
+                  <Bot className="h-4 w-4 text-primary-foreground" />
                 </div>
               )}
+
               <div
-                className={`max-w-[80%] md:max-w-[70%] rounded-2xl px-4 py-3 ${
+                className={cn(
+                  'max-w-[80%] md:max-w-[70%] rounded-2xl px-4 py-3',
                   message.role === 'user'
-                    ? 'bg-[#DC2626] text-white'
-                    : 'bg-gray-100 text-foreground'
-                }`}
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-foreground',
+                )}
               >
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                <p className="whitespace-pre-wrap leading-relaxed">
+                  {message.content}
+                </p>
                 <p
-                  className={`text-xs mt-2 ${
+                  className={cn(
+                    'text-xs mt-2 opacity-70',
                     message.role === 'user'
-                      ? 'text-white/70'
-                      : 'text-muted-foreground'
-                  }`}
+                      ? 'text-primary-foreground/70'
+                      : 'text-muted-foreground',
+                  )}
                 >
                   {message.timestamp.toLocaleTimeString([], {
                     hour: '2-digit',
@@ -197,40 +237,44 @@ export function AIAssistantPage() {
                   })}
                 </p>
               </div>
+
               {message.role === 'user' && (
-                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center shrink-0">
-                  <User className="h-4 w-4 text-gray-600" />
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                  <User className="h-4 w-4 text-muted-foreground" />
                 </div>
               )}
             </div>
           ))}
+
           {isTyping && (
             <div className="flex gap-3 justify-start">
-              <div className="w-8 h-8 rounded-full bg-linear-to-br from-[#DC2626] via-[#F59E0B] to-[#059669] flex items-center justify-center shrink-0">
-                <Bot className="h-4 w-4 text-white" />
+              <div className="w-8 h-8 rounded-full bg-linear-to-br from-primary via-primary/80 to-accent flex items-center justify-center shrink-0">
+                <Bot className="h-4 w-4 text-primary-foreground" />
               </div>
-              <div className="bg-gray-100 rounded-2xl px-4 py-3">
-                <div className="flex gap-1">
+              <div className="bg-muted rounded-2xl px-4 py-3">
+                <div className="flex gap-1.5">
                   <div
-                    className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"
+                    className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"
                     style={{ animationDelay: '0ms' }}
                   />
                   <div
-                    className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"
+                    className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"
                     style={{ animationDelay: '150ms' }}
                   />
                   <div
-                    className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"
+                    className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"
                     style={{ animationDelay: '300ms' }}
                   />
                 </div>
               </div>
             </div>
           )}
+
           <div ref={messagesEndRef} />
         </CardContent>
+
         {/* Input Area */}
-        <div className="border-t p-4">
+        <div className="border-t border-border p-4">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -242,13 +286,13 @@ export function AIAssistantPage() {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               placeholder="Ask me anything about budgeting, saving, or investing..."
-              className="flex-1"
+              className="flex-1 bg-background"
               disabled={isTyping}
             />
             <Button
               type="submit"
               size="icon"
-              className="bg-[#DC2626] hover:bg-[#B91C1C]"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
               disabled={!inputMessage.trim() || isTyping}
             >
               <Send className="h-5 w-5" />
