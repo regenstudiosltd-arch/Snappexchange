@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { authService } from '@/src/services/auth.service';
 import {
   TrendingUp,
   DollarSign,
@@ -39,62 +41,176 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
+// TypeScript Interfaces
+
+interface AnalyticsStats {
+  total_savings: number;
+  monthly_growth: number;
+  monthly_growth_percentage: number;
+  active_groups: number;
+  goals_progress: number;
+}
+
+interface SavingsOverTimeItem {
+  month: string;
+  amount: number;
+  contributions: number;
+}
+
+interface SavingsDistributionItem {
+  name: string;
+  value: number;
+}
+
+interface GroupPerformanceItem {
+  name: string;
+  savings: number;
+  members: number;
+}
+
+interface InsightOrRecommendation {
+  title: string;
+  description: string;
+}
+
+interface AnalyticsData {
+  stats: AnalyticsStats;
+  savings_over_time: SavingsOverTimeItem[];
+  savings_distribution: SavingsDistributionItem[];
+  group_performance: GroupPerformanceItem[];
+  key_insights: InsightOrRecommendation[];
+  recommendations: InsightOrRecommendation[];
+}
+
+// Fallback data
+
+const fallbackSavingsOverTime: SavingsOverTimeItem[] = [
+  { month: 'Jul', amount: 2400, contributions: 500 },
+  { month: 'Aug', amount: 3200, contributions: 800 },
+  { month: 'Sep', amount: 4100, contributions: 900 },
+  { month: 'Oct', amount: 5500, contributions: 1400 },
+  { month: 'Nov', amount: 6800, contributions: 1300 },
+  { month: 'Dec', amount: 8200, contributions: 1400 },
+];
+
+const fallbackSavingsDistribution: SavingsDistributionItem[] = [
+  { name: 'Emergency Fund', value: 3200 },
+  { name: 'Goals', value: 2800 },
+  { name: 'Group Savings', value: 2200 },
+];
+
+const fallbackGroupPerformance: GroupPerformanceItem[] = [
+  { name: 'University Friends', savings: 24500, members: 12 },
+  { name: 'Family Circle', savings: 18200, members: 8 },
+  { name: 'Startup Capital', savings: 12800, members: 5 },
+  { name: 'Vacation Fund', savings: 8900, members: 6 },
+];
+
+const fallbackKeyInsights: InsightOrRecommendation[] = [
+  {
+    title: 'Strong Savings Momentum',
+    description: "You've increased your savings by 15.3% in the last 6 months",
+  },
+  {
+    title: 'Consistent Contributions',
+    description: 'Your monthly contributions average GHS 1,283',
+  },
+  {
+    title: 'Top Performing Group',
+    description: '"University Friends" has the highest total savings',
+  },
+];
+
+const fallbackRecommendations: InsightOrRecommendation[] = [
+  {
+    title: 'Boost Emergency Fund',
+    description:
+      'Consider increasing your emergency fund to 6 months of expenses',
+  },
+  {
+    title: 'Diversify Savings',
+    description: 'Join more groups to diversify your savings portfolio',
+  },
+  {
+    title: 'Set New Goals',
+    description: "You're on track! Consider setting new financial goals",
+  },
+];
+
 export function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('6months');
 
-  // Sample data for charts
-  const savingsOverTime = [
-    { month: 'Jul', amount: 2400, contributions: 500 },
-    { month: 'Aug', amount: 3200, contributions: 800 },
-    { month: 'Sep', amount: 4100, contributions: 900 },
-    { month: 'Oct', amount: 5500, contributions: 1400 },
-    { month: 'Nov', amount: 6800, contributions: 1300 },
-    { month: 'Dec', amount: 8200, contributions: 1400 },
-  ];
+  // Fetch real analytics data
+  const { data: analytics } = useQuery<AnalyticsData>({
+    queryKey: ['analytics', timeRange],
+    queryFn: () => authService.analytics(timeRange),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
 
-  const categoryBreakdown = [
-    { name: 'Emergency Fund', value: 3200, color: '#0891B2' },
-    { name: 'Goals', value: 2800, color: '#22D3EE' },
-    { name: 'Group Savings', value: 2200, color: '#06B6D4' },
-  ];
+  // Fallback values
+  const stats: AnalyticsStats = analytics?.stats ?? {
+    total_savings: 8200,
+    monthly_growth: 1400,
+    monthly_growth_percentage: 8.2,
+    active_groups: 4,
+    goals_progress: 67,
+  };
 
-  const groupPerformance = [
-    { name: 'University Friends', savings: 24500, members: 12 },
-    { name: 'Family Circle', savings: 18200, members: 8 },
-    { name: 'Startup Capital', savings: 12800, members: 5 },
-    { name: 'Vacation Fund', savings: 8900, members: 6 },
-  ];
+  const savingsOverTime: SavingsOverTimeItem[] =
+    analytics?.savings_over_time ?? fallbackSavingsOverTime;
 
-  const stats = [
+  const savingsDistribution: SavingsDistributionItem[] =
+    analytics?.savings_distribution ?? fallbackSavingsDistribution;
+
+  const groupPerformance: GroupPerformanceItem[] =
+    analytics?.group_performance ?? fallbackGroupPerformance;
+
+  const keyInsights: InsightOrRecommendation[] =
+    analytics?.key_insights ?? fallbackKeyInsights;
+
+  const recommendations: InsightOrRecommendation[] =
+    analytics?.recommendations ?? fallbackRecommendations;
+
+  // Add colors for pie chart & legend
+  const distributionWithColors = savingsDistribution.map(
+    (item: SavingsDistributionItem, index: number) => ({
+      ...item,
+      color: ['#0891B2', '#22D3EE', '#06B6D4'][index % 3],
+    }),
+  );
+
+  // Stats cards (dynamic values)
+  const statsCards = [
     {
       title: 'Total Savings',
-      value: 'GHS 8,200',
-      change: '+15.3%',
-      trend: 'up',
+      value: `GHS ${Number(stats.total_savings).toLocaleString()}`,
+      change: `+${stats.monthly_growth_percentage}%`,
+      trend: 'up' as const,
       icon: DollarSign,
       color: 'text-green-600',
     },
     {
       title: 'Monthly Growth',
-      value: 'GHS 1,400',
-      change: '+8.2%',
-      trend: 'up',
+      value: `GHS ${Number(stats.monthly_growth).toLocaleString()}`,
+      change: `+${stats.monthly_growth_percentage}%`,
+      trend: 'up' as const,
       icon: TrendingUp,
       color: 'text-green-600',
     },
     {
       title: 'Active Groups',
-      value: '4',
+      value: stats.active_groups.toString(),
       change: '+1',
-      trend: 'up',
+      trend: 'up' as const,
       icon: Users,
       color: 'text-cyan-600',
     },
     {
       title: 'Goals Progress',
-      value: '67%',
+      value: `${stats.goals_progress}%`,
       change: '+12%',
-      trend: 'up',
+      trend: 'up' as const,
       icon: Target,
       color: 'text-cyan-600',
     },
@@ -105,7 +221,7 @@ export function AnalyticsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl mb-1">Analytics</h1>
+          <h1 className="text-3xl font-bold mb-1">Analytics</h1>
           <p className="text-muted-foreground">
             Track your savings performance and insights
           </p>
@@ -126,7 +242,7 @@ export function AnalyticsPage() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {statsCards.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm">{stat.title}</CardTitle>
@@ -153,7 +269,7 @@ export function AnalyticsPage() {
 
       {/* Charts Row 1 */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Savings Over Time */}
+        {/* Savings Growth */}
         <Card>
           <CardHeader>
             <CardTitle>Savings Growth</CardTitle>
@@ -186,7 +302,7 @@ export function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* Category Breakdown */}
+        {/* Savings Distribution (Pie) */}
         <Card>
           <CardHeader>
             <CardTitle>Savings Distribution</CardTitle>
@@ -196,7 +312,7 @@ export function AnalyticsPage() {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={categoryBreakdown}
+                  data={distributionWithColors}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -207,15 +323,16 @@ export function AnalyticsPage() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {categoryBreakdown.map((entry, index) => (
+                  {distributionWithColors.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+
             <div className="mt-4 space-y-2">
-              {categoryBreakdown.map((category) => (
+              {distributionWithColors.map((category) => (
                 <div
                   key={category.name}
                   className="flex items-center justify-between text-sm"
@@ -262,83 +379,51 @@ export function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Insights */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="bg-linear-to-br from-cyan-50 to-teal-50 border-cyan-200">
+      {/* Dynamic Insights & Recommendations */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="bg-muted/30 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-cyan-600" />
+              <TrendingUp className="h-5 w-5 text-primary" />
               Key Insights
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="h-2 w-2 rounded-full bg-cyan-500 mt-2" />
-              <div>
-                <p className="font-semibold">Strong Savings Momentum</p>
-                <p className="text-sm text-muted-foreground">
-                  You&quot;ve increased your savings by 15.3% in the last 6
-                  months
-                </p>
+          <CardContent className="space-y-4">
+            {keyInsights.map((insight, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
+                <div>
+                  <p className="font-semibold text-foreground">
+                    {insight.title}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {insight.description}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="h-2 w-2 rounded-full bg-cyan-500 mt-2" />
-              <div>
-                <p className="font-semibold">Consistent Contributions</p>
-                <p className="text-sm text-muted-foreground">
-                  Your monthly contributions average GHS 1,283
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="h-2 w-2 rounded-full bg-cyan-500 mt-2" />
-              <div>
-                <p className="font-semibold">Top Performing Group</p>
-                <p className="text-sm text-muted-foreground">
-                  &quot;University Friends&quot; has the highest total savings
-                </p>
-              </div>
-            </div>
+            ))}
           </CardContent>
         </Card>
 
-        <Card className="bg-linear-to-br from-amber-50 to-orange-50 border-amber-200">
+        <Card className="bg-muted/30 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-amber-600" />
+              <Target className="h-5 w-5 text-primary" />
               Recommendations
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="h-2 w-2 rounded-full bg-amber-500 mt-2" />
-              <div>
-                <p className="font-semibold">Boost Emergency Fund</p>
-                <p className="text-sm text-muted-foreground">
-                  Consider increasing your emergency fund to 6 months of
-                  expenses
-                </p>
+          <CardContent className="space-y-4">
+            {recommendations.map((rec, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
+                <div>
+                  <p className="font-semibold text-foreground">{rec.title}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {rec.description}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="h-2 w-2 rounded-full bg-amber-500 mt-2" />
-              <div>
-                <p className="font-semibold">Diversify Savings</p>
-                <p className="text-sm text-muted-foreground">
-                  Join more groups to diversify your savings portfolio
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="h-2 w-2 rounded-full bg-amber-500 mt-2" />
-              <div>
-                <p className="font-semibold">Set New Goals</p>
-                <p className="text-sm text-muted-foreground">
-                  You&quot;re on track! Consider setting new financial goals
-                </p>
-              </div>
-            </div>
+            ))}
           </CardContent>
         </Card>
       </div>
