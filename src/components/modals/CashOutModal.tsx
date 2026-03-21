@@ -67,13 +67,15 @@ export function CashOutModal({
   if (isSuccess) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md">
-          <div className="text-center py-8 space-y-4">
-            <div className="mx-auto w-16 h-16 rounded-full bg-[#059669]/10 flex items-center justify-center">
-              <Check className="h-8 w-8 text-[#059669]" />
+        <DialogContent className="max-w-md bg-card border-border">
+          <div className="text-center py-10 space-y-5">
+            <div className="mx-auto w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <Check className="h-10 w-10 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <h3 className="text-xl mb-2">Cash Out Successful!</h3>
+              <h3 className="text-2xl font-bold text-foreground mb-2">
+                Cash Out Successful!
+              </h3>
               <p className="text-muted-foreground">
                 ₵{amountAfterFee.toFixed(2)} has been sent to your{' '}
                 {payoutAccount.provider} account
@@ -87,36 +89,46 @@ export function CashOutModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[97vh] overflow-y-auto no-scrollbar">
-        <DialogHeader>
-          <DialogTitle>Cash Out</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-md max-h-[97vh] overflow-y-auto no-scrollbar bg-card border-border">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-2xl font-semibold text-foreground">
+            Cash Out
+          </DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             Withdraw funds to your registered mobile money account
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           {/* Available Balance */}
-          <div className="bg-linear-to-br from-[#DC2626] to-[#B91C1C] text-white rounded-lg p-4">
+          <div className="bg-linear-to-br  from-cyan-600 to-teal-500  text-white rounded-xl p-5 shadow-sm">
             <div className="text-sm opacity-90 mb-1">Available Balance</div>
-            <div className="text-3xl">₵{availableBalance.toFixed(2)}</div>
+            <div className="text-3xl md:text-4xl font-bold">
+              ₵{availableBalance.toFixed(2)}
+            </div>
           </div>
 
           {/* Payout Account Info */}
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+          <div className="bg-muted/30 border border-border rounded-xl p-5 space-y-3">
             <div className="text-sm text-muted-foreground">Payout Account</div>
-            <div>
-              <div className="text-sm">{payoutAccount.provider}</div>
-              <div className="text-sm">{payoutAccount.number}</div>
-              <div className="text-sm">{payoutAccount.name}</div>
+            <div className="space-y-1 text-sm">
+              <div className="font-medium text-foreground">
+                {payoutAccount.provider}
+              </div>
+              <div className="text-muted-foreground">
+                {payoutAccount.number}
+              </div>
+              <div className="text-muted-foreground">{payoutAccount.name}</div>
             </div>
           </div>
 
           {/* Amount Input */}
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount to Cash Out (₵)</Label>
+          <div className="space-y-3">
+            <Label htmlFor="amount" className="text-foreground">
+              Amount to Cash Out (₵)
+            </Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+              <DollarSign className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
               <Input
                 id="amount"
                 type="number"
@@ -124,22 +136,22 @@ export function CashOutModal({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
-                className="pl-10 text-lg"
+                className="pl-10 text-lg bg-background h-12"
                 max={availableBalance}
               />
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-sm pt-1">
               <button
                 type="button"
                 onClick={() => setAmount((availableBalance / 2).toFixed(2))}
-                className="text-[#DC2626] hover:underline"
+                className="text-primary hover:underline font-medium"
               >
                 Half
               </button>
               <button
                 type="button"
                 onClick={() => setAmount(availableBalance.toFixed(2))}
-                className="text-[#DC2626] hover:underline"
+                className="text-primary hover:underline font-medium"
               >
                 Max
               </button>
@@ -148,22 +160,24 @@ export function CashOutModal({
 
           {/* Fee Breakdown */}
           {numericAmount > 0 && (
-            <div className="space-y-3 border-t pt-4">
+            <div className="space-y-4 border-t border-border pt-5">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Cash Out Amount</span>
-                <span>₵{numericAmount.toFixed(2)}</span>
+                <span className="font-medium text-foreground">
+                  ₵{numericAmount.toFixed(2)}
+                </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
                   Service Fee ({serviceFeePercent}%)
                 </span>
-                <span className="text-[#DC2626]">
+                <span className="text-destructive font-medium">
                   -₵{serviceFee.toFixed(2)}
                 </span>
               </div>
-              <div className="flex items-center justify-between border-t pt-3">
-                <span>You&apos;ll Receive</span>
-                <span className="text-xl text-[#059669]">
+              <div className="flex items-center justify-between border-t border-border pt-4 text-base font-semibold">
+                <span className="text-foreground">You&apos;ll Receive</span>
+                <span className="text-xl text-primary">
                   ₵{amountAfterFee.toFixed(2)}
                 </span>
               </div>
@@ -171,20 +185,20 @@ export function CashOutModal({
           )}
 
           {/* Warning */}
-          <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/20 rounded-lg p-3 flex items-start gap-2">
-            <AlertCircle className="h-5 w-5 text-[#F59E0B] shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="mb-1">Please note:</p>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• Processing time: 5-30 minutes</li>
-                <li>• Service fee is non-refundable</li>
-                <li>• Ensure your mobile money account is active</li>
+          <div className="bg-amber-500/10 dark:bg-amber-900/20 border border-amber-500/30 dark:border-amber-500/20 rounded-xl p-4 flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="text-sm text-amber-900 dark:text-amber-100 space-y-1">
+              <p className="font-medium">Please note:</p>
+              <ul className="text-xs space-y-1 list-disc list-inside">
+                <li>Processing time: 5-30 minutes</li>
+                <li>Service fee is non-refundable</li>
+                <li>Ensure your mobile money account is active</li>
               </ul>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 pt-4">
             <Button
               variant="outline"
               onClick={onClose}
@@ -195,7 +209,7 @@ export function CashOutModal({
             </Button>
             <Button
               onClick={handleCashOut}
-              className="flex-1 bg-[#DC2626] hover:bg-[#B91C1C]"
+              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
               disabled={!isValidAmount || isProcessing}
             >
               {isProcessing ? 'Processing...' : 'Confirm Cash Out'}
