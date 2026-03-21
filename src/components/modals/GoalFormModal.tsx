@@ -116,85 +116,85 @@ export function GoalFormModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md bg-white p-6 rounded-xl">
-          <DialogTitle className="-mb-4 text-[16px] md:text-[24px] font-medium">
+        <DialogContent className="no-scrollbar max-w-md bg-card rounded-xl border-border max-h-[95vh] overflow-y-auto">
+          <DialogTitle className="text-[16px] md:text-[24px] font-medium text-foreground">
             {title}
           </DialogTitle>
-          <p className="text-sm mb-2 text-gray-500">
+          <p className="text-sm text-muted-foreground mb-2">
             {isEdit
-              ? 'Update your savings target'
+              ? 'Update your savings target and settings'
               : 'Set a new savings target and start building your future'}
           </p>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <Label className="text-sm mb-1 font-bold text-gray-600">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div className="space-y-2">
+              <Label className="text-sm mb-1 font-medium text-foreground">
                 Goal Name
               </Label>
               <Input
                 {...register('name')}
                 placeholder="e.g. Hospital Fund"
-                className="h-11"
+                className="h-11 bg-background"
               />
               {errors.name && (
-                <p className="text-xs text-red-500 mt-1">
+                <p className="text-xs text-destructive mt-1">
                   {errors.name.message}
                 </p>
               )}
             </div>
 
-            <div>
-              <Label className="text-sm mb-1 font-bold text-gray-600">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">
                 Target Amount (₵)
               </Label>
               <Input
                 type="number"
                 {...register('target_amount')}
                 placeholder="4000"
-                className="h-11"
+                className="h-11 bg-background"
               />
               {errors.target_amount && (
-                <p className="text-xs text-red-500 mt-1">
+                <p className="text-xs text-destructive mt-1">
                   {errors.target_amount.message}
                 </p>
               )}
             </div>
 
-            <div>
-              <Label className="text-sm mb-1 font-bold text-gray-600">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">
                 Regular Contribution (₵)
               </Label>
               <Input
                 type="number"
                 {...register('regular_contribution')}
                 placeholder="40"
-                className="h-11"
+                className="h-11 bg-background"
               />
               {errors.regular_contribution && (
-                <p className="text-xs text-red-500 mt-1">
+                <p className="text-xs text-destructive mt-1">
                   {errors.regular_contribution.message}
                 </p>
               )}
             </div>
 
-            <div>
-              <Label className="text-sm mb-1 font-bold text-gray-600">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">
                 Target Date
               </Label>
               <Input
                 type="date"
                 {...register('target_date')}
-                className="h-11"
+                className="h-11 bg-background"
               />
               {errors.target_date && (
-                <p className="text-xs text-red-500 mt-1">
+                <p className="text-xs text-destructive mt-1">
                   {errors.target_date.message}
                 </p>
               )}
             </div>
 
-            <div>
-              <Label className="text-sm mb-1 font-bold text-gray-600">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">
                 Frequency
               </Label>
               <Controller
@@ -202,10 +202,10 @@ export function GoalFormModal({
                 control={control}
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="h-11">
+                    <SelectTrigger className="h-11 bg-background">
                       <SelectValue placeholder="Select frequency" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white">
+                    <SelectContent>
                       <SelectItem value="daily">Daily</SelectItem>
                       <SelectItem value="weekly">Weekly</SelectItem>
                       <SelectItem value="monthly">Monthly</SelectItem>
@@ -214,17 +214,23 @@ export function GoalFormModal({
                 )}
               />
               {errors.frequency && (
-                <p className="text-xs text-red-500 mt-1">
+                <p className="text-xs text-destructive mt-1">
                   {errors.frequency.message}
                 </p>
               )}
             </div>
 
-            <div className="flex gap-3 pt-2">
+            {errorMessage && (
+              <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md border border-destructive/30">
+                {errorMessage}
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1 h-10 bg-transparent hover:bg-gray-100 text-gray-600 font-bold"
+                className="flex-1 h-11"
                 onClick={() => onOpenChange(false)}
               >
                 Cancel
@@ -232,7 +238,7 @@ export function GoalFormModal({
 
               <Button
                 type="submit"
-                className="flex-1 h-10 bg-cyan-500 hover:bg-cyan-600 text-white font-bold"
+                className="flex-1 h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
                 disabled={isSubmitting}
               >
                 {submitText}
@@ -242,22 +248,23 @@ export function GoalFormModal({
         </DialogContent>
       </Dialog>
 
+      {/* Error Dialog */}
       <AlertDialog
         open={!!errorMessage}
         onOpenChange={(open) => !open && setErrorMessage(null)}
       >
-        <AlertDialogContent className="bg-white">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <div className="flex items-center gap-2 text-red-600 mb-2">
+            <div className="flex items-center gap-2 text-destructive mb-2">
               <AlertCircle className="h-5 w-5" />
               <AlertDialogTitle>Submission Error</AlertDialogTitle>
             </div>
-            <AlertDialogDescription className="text-gray-700">
+            <AlertDialogDescription className="text-foreground">
               {errorMessage}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction className="bg-slate-900 text-white font-bold">
+            <AlertDialogAction className="bg-primary hover:bg-primary/90 text-primary-foreground">
               Back to Form
             </AlertDialogAction>
           </AlertDialogFooter>
