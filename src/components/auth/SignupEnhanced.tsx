@@ -17,6 +17,8 @@ import {
   Camera,
   LucideIcon,
   AlertCircle,
+  Loader2,
+  LucideChevronLeft,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -39,8 +41,8 @@ import { LivePictureCapture } from '../LivePictureCapture';
 import Image from 'next/image';
 import { signupSchema, SignupForm } from '@/src/lib/schemas';
 import { authService } from '@/src/services/auth.service';
-
-// --- Types & Interfaces ---
+import { cn } from '../ui/utils';
+import Link from 'next/link';
 
 interface SignupEnhancedProps {
   onComplete: (phoneNumber: string) => void;
@@ -61,23 +63,26 @@ const FormInput = ({
   ...props
 }: FormInputProps) => (
   <div className="space-y-1.5">
-    <Label htmlFor={props.id} className="text-sm font-semibold text-gray-800">
+    <Label htmlFor={props.id} className="text-sm font-medium text-foreground">
       {label}
     </Label>
     <div className="relative">
       {Icon && (
-        <Icon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+        <Icon className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
       )}
       <Input
         {...props}
-        className={`bg-[#F9FAFB] border-gray-200 rounded-lg h-12 focus-visible:ring-gray-300 placeholder:text-gray-400 ${
-          Icon ? 'pl-10' : ''
-        } ${className || ''} ${
-          error ? 'border-red-500 focus-visible:ring-red-500' : ''
-        }`}
+        className={cn(
+          'bg-background border-border rounded-lg h-12 focus-visible:ring-primary/30 placeholder:text-muted-foreground',
+          Icon ? 'pl-11' : '',
+          error && 'border-destructive focus-visible:ring-destructive/30',
+          className,
+        )}
       />
     </div>
-    {error && <span className="text-xs text-red-500 ml-1">{error}</span>}
+    {error && (
+      <span className="text-xs text-destructive mt-1 block">{error}</span>
+    )}
   </div>
 );
 
@@ -95,9 +100,9 @@ const SelectionGrid = ({
   onChange,
 }: SelectionGridProps) => (
   <div className="space-y-1.5">
-    <Label className="text-sm font-semibold text-gray-800">{label}</Label>
+    <Label className="text-sm font-medium text-foreground">{label}</Label>
     <div
-      className={`grid gap-4 ${
+      className={`grid gap-3 ${
         options.length > 2 ? 'grid-cols-3' : 'grid-cols-2'
       }`}
     >
@@ -106,11 +111,12 @@ const SelectionGrid = ({
           key={option}
           type="button"
           onClick={() => onChange(option)}
-          className={`h-14 rounded-xl border transition-all flex items-center justify-center font-medium capitalize ${
+          className={cn(
+            'h-14 rounded-xl border transition-all flex items-center justify-center font-medium capitalize',
             currentValue === option
-              ? 'border-red-600 bg-red-50 text-gray-900'
-              : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-          }`}
+              ? 'border-primary bg-primary/10 text-primary font-semibold'
+              : 'border-border bg-background text-muted-foreground hover:bg-muted hover:border-primary/30',
+          )}
         >
           {option}
         </button>
@@ -189,7 +195,7 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
     setIsFetchingGPS(true);
     setTimeout(() => {
       const mockGPS = `GA-${Math.floor(100 + Math.random() * 900)}-${Math.floor(
-        1000 + Math.random() * 9000
+        1000 + Math.random() * 9000,
       )}`;
       setValue('ghanaPostAddress', mockGPS, { shouldValidate: true });
       setIsFetchingGPS(false);
@@ -217,311 +223,340 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#DC2626]/5 via-[#F59E0B]/5 to-[#059669]/5 px-4 py-8">
-      <Card className="w-full max-w-2xl bg-white border border-gray-200 rounded-2xl shadow-lg">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-linear-to-br from-[#DC2626] via-[#F59E0B] to-[#059669]">
-              <span className="text-white text-xl">SX</span>
-            </div>
-          </div>
-          <CardTitle className="text-2xl">Create Your Account</CardTitle>
-          <CardDescription>
-            Step {step} of 4 - {STEP_TITLES[step - 1]}
-          </CardDescription>
+    <>
+      <Link href="/" className="inline-block mb-4">
+        <div className="group flex items-center gap-2 px-3 py-2 rounded-lg w-fit transition-all duration-200 cursor-pointer hover:bg-muted/60">
+          <LucideChevronLeft className="w-5 h-5 text-muted-foreground transition-transform duration-200 group-hover:-translate-x-1 group-hover:text-foreground" />
 
-          {/* Progress Bar */}
-          <div className="flex gap-2 mt-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className={`h-2 flex-1 rounded-full ${
-                  step >= i ? 'bg-[#DC2626]' : 'bg-gray-200'
-                }`}
-              />
-            ))}
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Global Error Message */}
-            {signupMutation.isError && (
-              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                {(
-                  signupMutation.error as {
-                    response?: { data?: { error?: string } };
-                  }
-                ).response?.data?.error ||
-                  'Registration failed. Please try again.'}
+          <h3 className="text-sm font-medium text-muted-foreground transition-colors duration-200 group-hover:text-foreground">
+            Back to home
+          </h3>
+        </div>
+      </Link>
+      <div className="min-h-screen flex items-center justify-center bg-background px-4 pb-8 pt-3">
+        <Card className="w-full max-w-2xl bg-card border-border rounded-2xl shadow-xl overflow-hidden">
+          <CardHeader className="text-center pb-6 pt-10">
+            <div className="flex justify-center mb-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-linear-to-br from-[#DC2626] via-[#F59E0B] to-[#059669]">
+                <span className="text-white text-xl">SX</span>
               </div>
-            )}
+            </div>
+            <CardTitle className="text-2xl md:text-3xl font-bold text-foreground">
+              Create Your Account
+            </CardTitle>
+            <CardDescription className="text-muted-foreground mt-2">
+              Step {step} of 4 - {STEP_TITLES[step - 1]}
+            </CardDescription>
 
-            {/* Step 1: Personal Information */}
-            {step === 1 && (
-              <>
-                <FormInput
-                  id="fullName"
-                  label="Full Name"
-                  icon={User}
-                  placeholder="Enter your full name"
-                  error={errors.fullName?.message}
-                  {...register('fullName')}
-                />
-
-                <FormInput
-                  id="email"
-                  label="Email Address"
-                  type="email"
-                  icon={Mail}
-                  placeholder="your@email.com"
-                  error={errors.email?.message}
-                  {...register('email')}
-                />
-
-                <FormInput
-                  id="dateOfBirth"
-                  label="Date of Birth"
-                  type="date"
-                  icon={Calendar}
-                  error={errors.dateOfBirth?.message}
-                  {...register('dateOfBirth')}
-                />
-
-                <Controller
-                  control={control}
-                  name="userType"
-                  render={({ field }) => (
-                    <SelectionGrid
-                      label="User Type"
-                      options={USER_TYPES}
-                      currentValue={field.value}
-                      onChange={field.onChange}
-                    />
+            {/* Progress Bar */}
+            <div className="flex gap-2 mt-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    'h-2 flex-1 rounded-full transition-colors',
+                    step >= i ? 'bg-primary' : 'bg-muted',
                   )}
                 />
-              </>
-            )}
+              ))}
+            </div>
+          </CardHeader>
 
-            {/* Profile & Contact */}
-            {step === 2 && (
-              <>
-                <FormInput
-                  id="momoNumber"
-                  label="Phone Number"
-                  type="tel"
-                  icon={Phone}
-                  placeholder="0XX XXX XXXX"
-                  error={errors.momoNumber?.message}
-                  {...register('momoNumber')}
-                />
+          <CardContent className="px-6 md:px-10 pb-10">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Global Error Message */}
+              {signupMutation.isError && (
+                <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive text-sm flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5 shrink-0" />
+                  <span>
+                    {(
+                      signupMutation.error as {
+                        response?: { data?: { error?: string } };
+                      }
+                    ).response?.data?.error ||
+                      'Registration failed. Please try again.'}
+                  </span>
+                </div>
+              )}
 
-                <div className="space-y-2">
+              {/* Step 1: Personal Information */}
+              {step === 1 && (
+                <>
                   <FormInput
-                    id="ghanaPostAddress"
-                    label="Digital Address (GhanaPost GPS)"
-                    icon={MapPin}
-                    placeholder="GH-XXX-XXXX"
-                    error={errors.ghanaPostAddress?.message}
-                    {...register('ghanaPostAddress')}
+                    id="fullName"
+                    label="Full Name"
+                    icon={User}
+                    placeholder="Enter your full name"
+                    error={errors.fullName?.message}
+                    {...register('fullName')}
                   />
 
+                  <FormInput
+                    id="email"
+                    label="Email Address"
+                    type="email"
+                    icon={Mail}
+                    placeholder="your@email.com"
+                    error={errors.email?.message}
+                    {...register('email')}
+                  />
+
+                  <FormInput
+                    id="dateOfBirth"
+                    label="Date of Birth"
+                    type="date"
+                    icon={Calendar}
+                    error={errors.dateOfBirth?.message}
+                    {...register('dateOfBirth')}
+                  />
+
+                  <Controller
+                    control={control}
+                    name="userType"
+                    render={({ field }) => (
+                      <SelectionGrid
+                        label="User Type"
+                        options={USER_TYPES}
+                        currentValue={field.value}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
+                </>
+              )}
+
+              {/* Step 2: Profile & Contact */}
+              {step === 2 && (
+                <>
+                  <FormInput
+                    id="momoNumber"
+                    label="Phone Number"
+                    type="tel"
+                    icon={Phone}
+                    placeholder="0XX XXX XXXX"
+                    error={errors.momoNumber?.message}
+                    {...register('momoNumber')}
+                  />
+
+                  <div className="space-y-3">
+                    <FormInput
+                      id="ghanaPostAddress"
+                      label="Digital Address (GhanaPost GPS)"
+                      icon={MapPin}
+                      placeholder="GH-XXX-XXXX"
+                      error={errors.ghanaPostAddress?.message}
+                      {...register('ghanaPostAddress')}
+                    />
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleFetchGPS}
+                      disabled={isFetchingGPS}
+                      className="w-full"
+                    >
+                      {isFetchingGPS ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Fetching GPS...
+                        </>
+                      ) : (
+                        <>
+                          <MapPin className="h-4 w-4 mr-2" />
+                          Get My GPS Address
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-foreground">Profile Picture</Label>
+                    <div className="flex flex-col items-center gap-5">
+                      {profilePreview && (
+                        <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-primary/30 shadow-md">
+                          <Image
+                            src={profilePreview}
+                            alt="Profile preview"
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-4 w-full">
+                        <label
+                          className={cn(
+                            'flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 border-dashed cursor-pointer transition-colors',
+                            'border-border hover:border-primary/50 hover:bg-primary/5',
+                          )}
+                        >
+                          <Upload className="h-6 w-6 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            Upload
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="hidden"
+                          />
+                        </label>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowCamera(true)}
+                          className={cn(
+                            'flex flex-col items-center justify-center gap-2 p-5 rounded-xl border-2 border-dashed cursor-pointer transition-colors',
+                            'border-border hover:border-primary/50 hover:bg-primary/5',
+                          )}
+                        >
+                          <Camera className="h-6 w-6 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            Live Camera
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Dialog open={showCamera} onOpenChange={setShowCamera}>
+                    <DialogContent className="max-w-2xl bg-card border-border">
+                      <DialogHeader>
+                        <DialogTitle className="text-foreground">
+                          Capture Profile Photo
+                        </DialogTitle>
+                        <DialogDescription className="text-muted-foreground">
+                          Take a clear photo of your face for verification
+                        </DialogDescription>
+                      </DialogHeader>
+                      <LivePictureCapture
+                        onCapture={handleCapture}
+                        capturedImage={profilePreview}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </>
+              )}
+
+              {/* Step 3: Payout Details */}
+              {step === 3 && (
+                <>
+                  <Controller
+                    control={control}
+                    name="momoProvider"
+                    render={({ field }) => (
+                      <SelectionGrid
+                        label="Mobile Money Provider"
+                        options={PAYOUT_PROVIDERS}
+                        currentValue={field.value}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
+
+                  <FormInput
+                    id="momoName"
+                    label="Account Name"
+                    icon={User}
+                    placeholder="Name on mobile money account"
+                    error={errors.momoName?.message}
+                    {...register('momoName')}
+                  />
+                </>
+              )}
+
+              {/* Step 4: Security */}
+              {step === 4 && (
+                <>
+                  <FormInput
+                    id="password"
+                    label="Password"
+                    type="password"
+                    icon={Lock}
+                    placeholder="Create a strong password"
+                    error={errors.password?.message}
+                    {...register('password')}
+                  />
+                  <p className="text-xs text-muted-foreground -mt-2 mb-3">
+                    Must be at least 8 characters.
+                  </p>
+
+                  <FormInput
+                    id="confirmPassword"
+                    label="Confirm Password"
+                    type="password"
+                    icon={Lock}
+                    placeholder="Re-enter your password"
+                    error={errors.confirmPassword?.message}
+                    {...register('confirmPassword')}
+                  />
+
+                  <div className="flex items-start gap-3 pt-3">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                      required
+                    />
+                    <span className="text-sm text-muted-foreground leading-relaxed">
+                      I agree to the{' '}
+                      <a href="#" className="text-primary hover:underline">
+                        Terms of Service
+                      </a>{' '}
+                      and{' '}
+                      <a href="#" className="text-primary hover:underline">
+                        Privacy Policy
+                      </a>
+                    </span>
+                  </div>
+                </>
+              )}
+
+              {/* Navigation Buttons */}
+              <div className="flex gap-3 pt-6">
+                {step > 1 && (
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={handleFetchGPS}
-                    disabled={isFetchingGPS}
-                    className="w-full border-cyan-300 hover:bg-cyan-50 hover:border-cyan-400"
+                    onClick={() => setStep((s) => s - 1)}
+                    className="flex-1 h-11"
                   >
-                    {isFetchingGPS ? (
+                    <ArrowLeft className="mr-2 h-5 w-5" />
+                    Back
+                  </Button>
+                )}
+
+                {step < 4 ? (
+                  <Button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground h-11 font-medium"
+                  >
+                    Continue
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={signupMutation.isPending}
+                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground h-11 font-medium"
+                  >
+                    {signupMutation.isPending ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-600 mr-2" />
-                        Fetching GPS...
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Creating Account...
                       </>
                     ) : (
-                      <>
-                        <MapPin className="h-4 w-4 mr-2" />
-                        Get My GPS Address
-                      </>
+                      'Create Account'
+                    )}
+                    {!signupMutation.isPending && (
+                      <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                     )}
                   </Button>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Profile Picture</Label>
-                  <div className="flex flex-col items-center gap-4">
-                    {profilePreview && (
-                      <Image
-                        src={profilePreview}
-                        alt="Profile preview"
-                        width={128}
-                        height={128}
-                        className="w-32 h-32 rounded-full object-cover border-4 border-cyan-500"
-                      />
-                    )}
-                    <div className="grid grid-cols-2 gap-3 w-full">
-                      <label className="flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer transition-colors">
-                        <Upload className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          Upload
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileChange}
-                          className="hidden"
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => setShowCamera(true)}
-                        className="flex items-center justify-center gap-2 p-4 rounded-lg border-2 border-dashed border-cyan-300 hover:border-cyan-400 cursor-pointer transition-colors bg-cyan-50"
-                      >
-                        <Camera className="h-5 w-5 text-cyan-600" />
-                        <span className="text-sm text-cyan-600">
-                          Live Camera
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <Dialog open={showCamera} onOpenChange={setShowCamera}>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Capture Profile Photo</DialogTitle>
-                      <DialogDescription>
-                        Take a clear photo of your face for verification
-                      </DialogDescription>
-                    </DialogHeader>
-                    <LivePictureCapture
-                      onCapture={handleCapture}
-                      capturedImage={profilePreview}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </>
-            )}
-
-            {/* Payout Details */}
-            {step === 3 && (
-              <>
-                <Controller
-                  control={control}
-                  name="momoProvider"
-                  render={({ field }) => (
-                    <SelectionGrid
-                      label="Mobile Money Provider"
-                      options={PAYOUT_PROVIDERS}
-                      currentValue={field.value}
-                      onChange={field.onChange}
-                    />
-                  )}
-                />
-
-                <FormInput
-                  id="momoName"
-                  label="Account Name"
-                  icon={User}
-                  placeholder="Name on mobile money account"
-                  error={errors.momoName?.message}
-                  {...register('momoName')}
-                />
-              </>
-            )}
-
-            {/* Security */}
-            {step === 4 && (
-              <>
-                <FormInput
-                  id="password"
-                  label="Password"
-                  type="password"
-                  icon={Lock}
-                  placeholder="Create a strong password"
-                  error={errors.password?.message}
-                  {...register('password')}
-                />
-                <p className="text-xs text-muted-foreground -mt-2 mb-2">
-                  Must be at least 8 characters.
-                </p>
-
-                <FormInput
-                  id="confirmPassword"
-                  label="Confirm Password"
-                  type="password"
-                  icon={Lock}
-                  placeholder="Re-enter your password"
-                  error={errors.confirmPassword?.message}
-                  {...register('confirmPassword')}
-                />
-
-                <div className="flex items-start gap-2 pt-2">
-                  <input
-                    type="checkbox"
-                    className="mt-1 rounded border-gray-300"
-                    required
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    I agree to the{' '}
-                    <a href="#" className="text-[#DC2626] hover:underline">
-                      Terms of Service
-                    </a>{' '}
-                    and{' '}
-                    <a href="#" className="text-[#DC2626] hover:underline">
-                      Privacy Policy
-                    </a>
-                  </span>
-                </div>
-              </>
-            )}
-
-            {/* Navigation Buttons */}
-            <div className="flex gap-3 pt-4">
-              {step > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setStep((s) => s - 1)}
-                  className="flex-1"
-                >
-                  <ArrowLeft className="mr-2 h-5 w-5" /> Back
-                </Button>
-              )}
-
-              {step < 4 ? (
-                <Button
-                  type="button"
-                  onClick={handleNextStep}
-                  className="flex-1 bg-[#DC2626] hover:bg-[#B91C1C] group text-white"
-                >
-                  Continue
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  disabled={signupMutation.isPending}
-                  className="flex-1 bg-[#DC2626] hover:bg-[#B91C1C] group text-white"
-                >
-                  {signupMutation.isPending ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                      Creating Account...
-                    </>
-                  ) : (
-                    'Create Account'
-                  )}
-                  {!signupMutation.isPending && (
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  )}
-                </Button>
-              )}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+                )}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 }
