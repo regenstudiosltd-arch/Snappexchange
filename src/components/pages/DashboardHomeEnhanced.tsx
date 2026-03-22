@@ -209,8 +209,8 @@ export function DashboardHomeEnhanced({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Total Savings Card – kept very close to original look */}
+    <div className="space-y-6 mb-18 md:mb-0">
+      {/* Total Savings Card */}
       <Card className="bg-linear-to-br from-cyan-500 to-teal-600 text-white rounded-2xl">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -315,69 +315,96 @@ export function DashboardHomeEnhanced({
             <h3 className="text-xl md:text-2xl font-semibold text-foreground">
               Your Savings Groups
             </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-primary hover:text-primary/90"
-            >
-              View All
-            </Button>
+            {savingsGroups.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary hover:text-primary/90"
+              >
+                View All
+              </Button>
+            )}
           </div>
-          {savingsGroups.map((group, index) => (
-            <Card
-              key={index}
-              className="hover:shadow-md transition-shadow bg-card border-border"
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg font-medium text-foreground">
-                      {group.name}
-                    </CardTitle>
-                    <CardDescription>{group.members} members</CardDescription>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-muted-foreground">
-                      Total Saved
+
+          {savingsGroups.length > 0 ? (
+            savingsGroups.map((group, index) => (
+              <Card
+                key={index}
+                className="hover:shadow-md transition-shadow bg-card border-border"
+              >
+                <Card
+                  key={index}
+                  className="hover:shadow-md transition-shadow bg-card border-border"
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg font-medium text-foreground">
+                          {group.name}
+                        </CardTitle>
+                        <CardDescription>
+                          {group.members} members
+                        </CardDescription>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-muted-foreground">
+                          Total Saved
+                        </div>
+                        <div className="text-lg font-semibold text-foreground">
+                          ₵{group.totalSaved.toLocaleString()}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-lg font-semibold text-foreground">
-                      ₵{group.totalSaved.toLocaleString()}
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    <div>
+                      <div className="flex items-center justify-between text-sm mb-2">
+                        <span className="text-muted-foreground">Progress</span>
+                        <span className="font-medium">{group.progress}%</span>
+                      </div>
+                      <Progress
+                        value={group.progress}
+                        className="h-2 dark:bg-gray-500"
+                      />
                     </div>
-                  </div>
+                    <div className="grid grid-cols-2 gap-6 text-sm">
+                      <div>
+                        <div className="text-muted-foreground mb-1">
+                          Your Contribution
+                        </div>
+                        <div className="font-medium text-foreground">
+                          ₵{group.yourContribution.toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground mb-1">
+                          Next Payout
+                        </div>
+                        <div className="text-primary font-medium">
+                          {group.nextPayout}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Card>
+            ))
+          ) : (
+            <Card className="border-dashed border-2 bg-muted/10">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <Users className="h-8 w-8 text-primary" />
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div>
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">{group.progress}%</span>
-                  </div>
-                  <Progress
-                    value={group.progress}
-                    className="h-2 dark:bg-gray-500"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-6 text-sm">
-                  <div>
-                    <div className="text-muted-foreground mb-1">
-                      Your Contribution
-                    </div>
-                    <div className="font-medium text-foreground">
-                      ₵{group.yourContribution.toLocaleString()}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground mb-1">
-                      Next Payout
-                    </div>
-                    <div className="text-primary font-medium">
-                      {group.nextPayout}
-                    </div>
-                  </div>
-                </div>
+                <h4 className="text-lg font-semibold text-foreground">
+                  No groups yet
+                </h4>
+                <p className="text-sm text-muted-foreground max-w-70 mb-6">
+                  Join a savings circle or create your own to start saving with
+                  others.
+                </p>
               </CardContent>
             </Card>
-          ))}
+          )}
         </div>
 
         {/* Recent Activity */}
@@ -446,7 +473,7 @@ export function DashboardHomeEnhanced({
               <CardTitle className="text-lg md:text-xl font-medium text-foreground">
                 Financial Goals
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-[14px] text-muted-foreground">
                 Track your personal savings targets
               </CardDescription>
             </div>
@@ -456,36 +483,54 @@ export function DashboardHomeEnhanced({
               onClick={() => onNavigate('Goals')}
             >
               <Target className="h-4 w-4 mr-2" />
-              View All
+              {goals.length > 0 ? 'View All' : 'Add Goal'}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {goals.map((goal, index) => (
-              <div
-                key={index}
-                className="p-5 rounded-lg border border-border hover:border-primary/50 transition-colors cursor-pointer bg-card"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-foreground">
-                    {goal.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {goal.progress}%
-                  </span>
+          {goals.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {goals.map((goal, index) => (
+                <div
+                  key={index}
+                  className="p-5 rounded-lg border border-border hover:border-primary/50 transition-colors cursor-pointer bg-card"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-foreground">
+                      {goal.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {goal.progress}%
+                    </span>
+                  </div>
+                  <Progress
+                    value={goal.progress}
+                    className="h-2 mb-3 dark:bg-gray-500"
+                  />
+                  <div className="text-xs text-muted-foreground">
+                    ₵{goal.saved.toLocaleString()} of ₵
+                    {goal.target.toLocaleString()}
+                  </div>
                 </div>
-                <Progress
-                  value={goal.progress}
-                  className="h-2 mb-3 dark:bg-gray-500"
-                />
-                <div className="text-xs text-muted-foreground">
-                  ₵{goal.saved.toLocaleString()} of ₵
-                  {goal.target.toLocaleString()}
-                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-12 h-12 bg-primary/5 rounded-full flex items-center justify-center mb-3">
+                <Target className="h-6 w-6 text-primary/60" />
               </div>
-            ))}
-          </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                You haven&apos;t set any personal financial goals yet.
+              </p>
+              <Button
+                variant="link"
+                className="text-primary p-0 h-auto"
+                onClick={() => onNavigate('Goals')}
+              >
+                Click here to set your first goal
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
