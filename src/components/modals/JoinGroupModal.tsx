@@ -215,8 +215,9 @@ export function JoinGroupModal({
                 ) : (
                   <div className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-xl bg-muted/30">
                     <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground font-medium">
-                      No public groups match your search.
+                    <p className="px-2 text-muted-foreground font-medium">
+                      There are no public groups at the moment. You can be the
+                      first to create one.
                     </p>
                   </div>
                 )}
