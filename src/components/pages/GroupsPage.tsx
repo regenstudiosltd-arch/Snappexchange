@@ -32,7 +32,7 @@ interface Group {
   public_id: string;
   group_name: string;
   description: string;
-  member_count: number;
+  current_members: number;
   total_savings: string;
   frequency: string;
   contribution_amount: string;
@@ -75,7 +75,7 @@ export function GroupsPage() {
   );
 
   const totalMembers = (groups || []).reduce(
-    (sum, group) => sum + (Number(group.member_count) || 0),
+    (sum, group) => sum + (Number(group.current_members) || 0),
     0,
   );
   const totalGroupSavings = (groups || []).reduce(
@@ -187,7 +187,8 @@ export function GroupsPage() {
                       )}
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      {group.member_count} members
+                      {group.current_members}
+                      {group.current_members === 1 ? ' member' : ' members'}
                     </CardDescription>
                   </div>
                 </div>
