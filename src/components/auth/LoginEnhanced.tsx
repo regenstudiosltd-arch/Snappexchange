@@ -10,6 +10,9 @@ import {
   ArrowRight,
   AlertCircle,
   LucideChevronLeft,
+  Loader2,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -32,6 +35,7 @@ interface LoginEnhancedProps {
 export function LoginEnhanced({ onSuccess, onNavigate }: LoginEnhancedProps) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -73,12 +77,12 @@ export function LoginEnhanced({ onSuccess, onNavigate }: LoginEnhancedProps) {
       <Link href="/" className="inline-block mb-4">
         <div className="group flex items-center gap-2 px-3 py-2 rounded-lg w-fit transition-all duration-200 cursor-pointer hover:bg-muted/60">
           <LucideChevronLeft className="w-5 h-5 text-muted-foreground transition-transform duration-200 group-hover:-translate-x-1 group-hover:text-foreground" />
-
           <h3 className="text-sm font-medium text-muted-foreground transition-colors duration-200 group-hover:text-foreground">
             Back to home
           </h3>
         </div>
       </Link>
+
       <div className="min-h-screen flex items-center justify-center px-4 pb-8 pt-3">
         <Card className="w-full max-w-md bg-card border-border shadow-xl rounded-2xl overflow-hidden">
           <CardHeader className="text-center pb-6 pt-10">
@@ -128,16 +132,31 @@ export function LoginEnhanced({ onSuccess, onNavigate }: LoginEnhancedProps) {
                 <Label htmlFor="password" className="text-foreground">
                   Password
                 </Label>
+
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
+
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
-                    className="pl-11 bg-background h-11"
+                    className="pl-11 pr-11 bg-background h-11"
                     {...register('password')}
                   />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-all duration-200"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
                 </div>
+
                 {errors.password && (
                   <p className="text-xs text-destructive mt-1">
                     {errors.password.message}
@@ -173,12 +192,13 @@ export function LoginEnhanced({ onSuccess, onNavigate }: LoginEnhancedProps) {
               >
                 {isLoading ? (
                   <>
-                    <span className="mr-2">Logging in...</span>
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    Signing in...
                   </>
                 ) : (
                   <>
                     Login
-                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform" />
                   </>
                 )}
               </Button>
