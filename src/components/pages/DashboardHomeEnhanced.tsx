@@ -522,13 +522,11 @@ export function DashboardHomeEnhanced({
               <p className="text-sm text-muted-foreground mb-4">
                 You haven&apos;t set any personal financial goals yet.
               </p>
-              <Button
-                variant="link"
-                className="text-primary p-0 h-auto"
-                onClick={() => onNavigate('Goals')}
-              >
-                Click here to set your first goal
-              </Button>
+              <p className="text-primary p-0 h-auto">
+                Click the{' '}
+                <span className="font-bold">&quot;Add Goal&quot;</span> button
+                to set your first goal.
+              </p>
             </div>
           )}
         </CardContent>
