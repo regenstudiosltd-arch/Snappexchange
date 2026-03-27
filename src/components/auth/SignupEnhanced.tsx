@@ -19,6 +19,8 @@ import {
   AlertCircle,
   Loader2,
   LucideChevronLeft,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -60,31 +62,57 @@ const FormInput = ({
   icon: Icon,
   className,
   error,
+  type,
   ...props
-}: FormInputProps) => (
-  <div className="space-y-1.5">
-    <Label htmlFor={props.id} className="text-sm font-medium text-foreground">
-      {label}
-    </Label>
-    <div className="relative">
-      {Icon && (
-        <Icon className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
-      )}
-      <Input
-        {...props}
-        className={cn(
-          'bg-background border-border rounded-lg h-12 focus-visible:ring-primary/30 placeholder:text-muted-foreground',
-          Icon ? 'pl-11' : '',
-          error && 'border-destructive focus-visible:ring-destructive/30',
-          className,
+}: FormInputProps) => {
+  const [showPassword, setShowPassword] = useState(false);
+
+  const isPassword = type === 'password';
+
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={props.id} className="text-sm font-medium text-foreground">
+        {label}
+      </Label>
+
+      <div className="relative">
+        {Icon && (
+          <Icon className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
         )}
-      />
+
+        <Input
+          {...props}
+          type={isPassword ? (showPassword ? 'text' : 'password') : type}
+          className={cn(
+            'bg-background border-border rounded-lg h-12 focus-visible:ring-primary/30 placeholder:text-muted-foreground',
+            Icon ? 'pl-11' : '',
+            isPassword ? 'pr-11' : '',
+            error && 'border-destructive focus-visible:ring-destructive/30',
+            className,
+          )}
+        />
+
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showPassword ? (
+              <EyeOff className="h-5 w-5" />
+            ) : (
+              <Eye className="h-5 w-5" />
+            )}
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <span className="text-xs text-destructive mt-1 block">{error}</span>
+      )}
     </div>
-    {error && (
-      <span className="text-xs text-destructive mt-1 block">{error}</span>
-    )}
-  </div>
-);
+  );
+};
 
 interface SelectionGridProps {
   label: string;
