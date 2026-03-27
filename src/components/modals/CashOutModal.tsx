@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { DollarSign, AlertCircle, Check } from 'lucide-react';
+import { Banknote, AlertCircle, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -128,7 +128,7 @@ export function CashOutModal({
               Amount to Cash Out (₵)
             </Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+              <Banknote className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
               <Input
                 id="amount"
                 type="number"
