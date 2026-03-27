@@ -121,11 +121,13 @@ export const authService = {
     return response.data;
   },
 
-  getGroupJoinRequests: async (groupId: number) => {
+  getGroupJoinRequests: async (
+    groupId: number,
+    status: 'pending' | 'approved' | 'rejected' = 'pending',
+  ) => {
     const response = await apiClient.get(
-      `/accounts/groups/${groupId}/requests/`,
+      `/accounts/groups/${groupId}/requests/?status=${status}`,
     );
-    // array of pending requests
     return response.data;
   },
 
