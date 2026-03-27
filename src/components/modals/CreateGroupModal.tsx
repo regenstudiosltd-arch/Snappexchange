@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import {
   Upload,
   Users,
-  DollarSign,
+  Banknote,
   Shield,
   ArrowRight,
   ArrowLeft,
@@ -33,6 +33,7 @@ import { authService } from '@/src/services/auth.service';
 import { AxiosError } from 'axios';
 import { cn } from '../ui/utils';
 import { Textarea } from '../ui/textarea';
+import { toast } from 'sonner';
 
 interface GroupData {
   id: string;
@@ -60,7 +61,6 @@ export function CreateGroupModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
-    // Step 1 - Admin Verification (UI-only fields - not sent to backend)
     adminFullName: '',
     adminAge: '',
     adminEmail: '',
@@ -69,8 +69,6 @@ export function CreateGroupModal({
     adminOccupation: '',
     ghanaCardFront: null as File | null,
     ghanaCardBack: null as File | null,
-
-    // Step 2 - Real backend fields
     groupName: '',
     contributionAmount: '',
     contributionFrequency: '',
@@ -100,16 +98,24 @@ export function CreateGroupModal({
         description: formData.groupDescription || '',
         totalSaved: 0,
       };
+
       onComplete(newGroup);
       onClose();
       resetForm();
+
+      toast.success('Group Created Successfully', {
+        description: `${formData.groupName} has been set up.`,
+      });
     },
     onError: (error: AxiosError<{ error?: string; detail?: string }>) => {
       const errorMsg =
         error?.response?.data?.error ||
         error?.response?.data?.detail ||
         'Failed to create group. Please try again.';
-      alert(errorMsg);
+
+      toast.error('Creation Failed', {
+        description: errorMsg,
+      });
     },
     onSettled: () => setIsSubmitting(false),
   });
@@ -161,7 +167,6 @@ export function CreateGroupModal({
       payload.append('description', formData.groupDescription);
     }
 
-    // KYC nested fields
     if (formData.ghanaCardFront) {
       payload.append('kyc.ghana_card_front', formData.ghanaCardFront);
     }
@@ -169,22 +174,28 @@ export function CreateGroupModal({
       payload.append('kyc.ghana_card_back', formData.ghanaCardBack);
     }
 
-    // Live photo
     if (livePictureData) {
       try {
         const blob = await fetch(livePictureData).then((r) => r.blob());
         if (blob.size === 0) throw new Error('Empty image');
+
         const liveFile = new File([blob], `live_photo_${Date.now()}.jpg`, {
           type: 'image/jpeg',
         });
+
         payload.append('kyc.live_photo', liveFile);
-      } catch (e) {
-        alert('Live photo is empty or invalid. Please retake the photo.');
+      } catch {
+        toast.error('Invalid Image', {
+          description:
+            'Live photo is empty or invalid. Please retake the photo.',
+        });
         setIsSubmitting(false);
         return;
       }
     } else {
-      alert('Please capture a live photo');
+      toast.error('Missing Photo', {
+        description: 'Please capture a live photo to verify your identity.',
+      });
       setIsSubmitting(false);
       return;
     }
@@ -221,7 +232,6 @@ export function CreateGroupModal({
                 : 'Review and confirm group creation'}
           </DialogDescription>
 
-          {/* Progress Bar */}
           <div className="flex gap-2 mt-5">
             {[1, 2, 3].map((s) => (
               <div
@@ -236,7 +246,8 @@ export function CreateGroupModal({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* ===================== STEP 1: Admin Verification ===================== */}
+          {/* ... Step content remains the same as your original file ... */}
+          {/* Step 1 content */}
           {step === 1 && (
             <>
               <div className="bg-primary/10 border border-primary/20 rounded-lg p-5 flex items-start gap-4">
@@ -396,7 +407,7 @@ export function CreateGroupModal({
             </>
           )}
 
-          {/* ===================== STEP 2: Group Details ===================== */}
+          {/* Step 2 content */}
           {step === 2 && (
             <>
               <div className="space-y-2">
@@ -420,7 +431,7 @@ export function CreateGroupModal({
                     Contribution Amount (₵)
                   </Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                    <Banknote className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                     <Input
                       type="number"
                       value={formData.contributionAmount}
@@ -495,7 +506,7 @@ export function CreateGroupModal({
             </>
           )}
 
-          {/* ===================== STEP 3: Review & Confirmation ===================== */}
+          {/* Step 3 content */}
           {step === 3 && (
             <>
               <div className="space-y-6">
