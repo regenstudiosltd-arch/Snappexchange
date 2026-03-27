@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   UserPlus,
@@ -11,7 +12,10 @@ import {
   UserCircle2,
   Calendar,
   Users,
+  Loader2,
+  Plus,
 } from 'lucide-react';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -26,29 +30,32 @@ interface JoinRequest {
   user_details: {
     full_name: string;
     momo_number: string;
+    profile_picture?: string | null;
   };
   requested_at: string;
   reason?: string;
+  status: 'pending' | 'approved' | 'rejected';
 }
 
 interface Group {
   id: number;
   group_name: string;
+  is_current_user_admin: boolean;
 }
 
 export function RequestsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<
-    'pending' | 'accepted' | 'declined'
+    'pending' | 'approved' | 'rejected'
   >('pending');
   const [selectedRequest, setSelectedRequest] = useState<JoinRequest | null>(
     null,
   );
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
   const queryClient = useQueryClient();
 
-  // ==================== STATS ====================
   const { data: stats } = useQuery({
     queryKey: ['join-requests-stats'],
     queryFn: authService.getJoinRequestsStats,
@@ -58,42 +65,52 @@ export function RequestsPage() {
   const acceptedCount = stats?.accepted ?? 0;
   const declinedCount = stats?.declined ?? 0;
 
-  // ==================== ALL PENDING REQUESTS ACROSS ADMIN GROUPS ====================
-  const { data: myGroups } = useQuery<Group[]>({
+  const { data: groupsData } = useQuery({
     queryKey: ['my-joined-groups'],
     queryFn: authService.getMyJoinedGroups,
   });
 
-  const { data: allPendingRequests = [] } = useQuery<JoinRequest[]>({
-    queryKey: ['all-pending-requests'],
-    queryFn: async () => {
-      if (!myGroups || myGroups.length === 0) return [];
+  const myGroups: Group[] = groupsData?.results || groupsData || [];
 
+  const adminGroups = myGroups.filter((g) => g.is_current_user_admin);
+
+  const { data: requestsForTab = [] } = useQuery<JoinRequest[]>({
+    queryKey: ['group-requests', activeTab, adminGroups],
+    queryFn: async () => {
+      if (adminGroups.length === 0) return [];
       const requestsPerGroup = await Promise.all(
-        myGroups.map(async (group) => {
+        adminGroups.map(async (group) => {
           try {
-            const res = await authService.getGroupJoinRequests(group.id);
-            return res.map((r: JoinRequest) => ({
+            const res = await authService.getGroupJoinRequests(
+              group.id,
+              activeTab,
+            );
+            const dataArray: JoinRequest[] = Array.isArray(res)
+              ? res
+              : res?.results || [];
+            return dataArray.map((r) => ({
               id: r.id,
-              group_name: r.group_name,
-              user_details: r.user_details,
+              group_name: r.group_name || group.group_name,
+              user_details: { ...r.user_details },
               requested_at: r.requested_at,
               reason: r.reason,
+              status: r.status,
             }));
-          } catch (err: unknown) {
-            const error = err as { response?: { status?: number } };
-            if (error.response?.status === 403) return [];
-            throw err;
+          } catch (err) {
+            console.error(
+              `Error fetching requests for group ${group.id}:`,
+              err,
+            );
+            return [];
           }
         }),
       );
-
       return requestsPerGroup.flat();
     },
-    enabled: !!myGroups,
+    enabled: adminGroups.length > 0,
   });
 
-  // ==================== ACTIONS ====================
+  //  ACTIONS
   const actionMutation = useMutation({
     mutationFn: ({
       id,
@@ -103,19 +120,30 @@ export function RequestsPage() {
       action: 'approve' | 'reject';
     }) => authService.actionJoinRequest(id, action),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['all-pending-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['group-requests'] });
       queryClient.invalidateQueries({ queryKey: ['join-requests-stats'] });
+      setIsProfileModalOpen(false);
     },
   });
 
   const handleAccept = (requestId: number) => {
-    actionMutation.mutate({ id: requestId, action: 'approve' });
-    setIsProfileModalOpen(false);
+    setProcessingId(requestId);
+    actionMutation.mutate(
+      { id: requestId, action: 'approve' },
+      {
+        onSettled: () => setProcessingId(null),
+      },
+    );
   };
 
   const handleDecline = (requestId: number) => {
-    actionMutation.mutate({ id: requestId, action: 'reject' });
-    setIsProfileModalOpen(false);
+    setProcessingId(requestId);
+    actionMutation.mutate(
+      { id: requestId, action: 'reject' },
+      {
+        onSettled: () => setProcessingId(null),
+      },
+    );
   };
 
   const handleReview = (request: JoinRequest) => {
@@ -123,17 +151,13 @@ export function RequestsPage() {
     setIsProfileModalOpen(true);
   };
 
-  // Filter only for current tab
-  const filteredRequests =
-    activeTab === 'pending'
-      ? allPendingRequests.filter(
-          (req) =>
-            req.user_details.full_name
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase()) ||
-            req.group_name.toLowerCase().includes(searchQuery.toLowerCase()),
-        )
-      : [];
+  const filteredRequests = requestsForTab.filter(
+    (req) =>
+      req.user_details.full_name
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      req.group_name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   const getRelativeTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -147,8 +171,36 @@ export function RequestsPage() {
     return date.toLocaleDateString();
   };
 
+  if (adminGroups.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <div className="flex flex-col items-center text-center max-w-md px-6">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted mb-6">
+            <Users className="h-10 w-10 text-muted-foreground" />
+          </div>
+
+          <h2 className="text-2xl font-semibold tracking-tight mb-2">
+            No groups yet
+          </h2>
+
+          <p className="text-muted-foreground text-sm leading-relaxed mb-8">
+            You haven&apos;t created any savings groups yet. Once you create a
+            group, join requests will appear here.
+          </p>
+
+          <Button asChild size="lg" className="gap-2">
+            <Link href="/groups">
+              <Plus className="h-4 w-4" />
+              Create a group.
+            </Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 md:mb-0 mb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -179,7 +231,6 @@ export function RequestsPage() {
             </p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -194,7 +245,6 @@ export function RequestsPage() {
             <p className="text-xs text-muted-foreground">Members approved</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -211,7 +261,7 @@ export function RequestsPage() {
         </Card>
       </div>
 
-      {/* Search + Tabs */}
+      {/* Search + Tabs (now all have badges) */}
       <Card className="bg-card border-border">
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -224,7 +274,6 @@ export function RequestsPage() {
                 className="pl-9 bg-background"
               />
             </div>
-
             <div className="flex gap-2 flex-wrap">
               <Button
                 variant={activeTab === 'pending' ? 'default' : 'outline'}
@@ -239,53 +288,55 @@ export function RequestsPage() {
                 {pendingCount > 0 && (
                   <Badge
                     variant="secondary"
-                    className="ml-2 bg-primary/20 text-primary dark:bg-primary/30"
+                    className="ml-2 bg-primary/20 text-primary"
                   >
                     {pendingCount}
                   </Badge>
                 )}
               </Button>
-
               <Button
-                variant={activeTab === 'accepted' ? 'default' : 'outline'}
+                variant={activeTab === 'approved' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setActiveTab('accepted')}
+                onClick={() => setActiveTab('approved')}
               >
                 Accepted
+                {acceptedCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 bg-green-500/20 text-green-600"
+                  >
+                    {acceptedCount}
+                  </Badge>
+                )}
               </Button>
-
               <Button
-                variant={activeTab === 'declined' ? 'default' : 'outline'}
+                variant={activeTab === 'rejected' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setActiveTab('declined')}
+                onClick={() => setActiveTab('rejected')}
               >
                 Declined
+                {declinedCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 bg-red-500/20 text-red-600"
+                  >
+                    {declinedCount}
+                  </Badge>
+                )}
               </Button>
             </div>
           </div>
         </CardHeader>
 
         <CardContent>
-          {activeTab !== 'pending' ? (
-            <div className="text-center py-12">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                No list available yet
-              </h3>
-              <p className="text-muted-foreground">
-                Accepted and Declined requests can be viewed in the individual
-                group details.
-              </p>
-            </div>
-          ) : filteredRequests.length === 0 ? (
+          {filteredRequests.length === 0 ? (
             <div className="text-center py-12">
               <UserPlus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">
-                No pending requests
+                No {activeTab} requests
               </h3>
               <p className="text-muted-foreground">
-                You&apos;ll see join requests here when users apply to your
-                groups
+                No requests in this category yet.
               </p>
             </div>
           ) : (
@@ -299,7 +350,17 @@ export function RequestsPage() {
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="bg-primary/10 dark:bg-primary/20 rounded-full p-3">
-                          <UserCircle2 className="h-8 w-8 text-primary" />
+                          {request.user_details.profile_picture ? (
+                            <Image
+                              src={request.user_details.profile_picture}
+                              alt={`Profile picture of ${request.user_details.full_name}`}
+                              width={32}
+                              height={32}
+                              className="h-8 w-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <UserCircle2 className="h-8 w-8 text-primary" />
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center flex-wrap gap-2 mb-2">
@@ -314,13 +375,11 @@ export function RequestsPage() {
                               {request.group_name}
                             </Badge>
                           </div>
-
                           {request.reason && (
                             <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                               {request.reason}
                             </p>
                           )}
-
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Calendar className="h-3 w-3" />
                             {getRelativeTime(request.requested_at)}
@@ -329,33 +388,72 @@ export function RequestsPage() {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleReview(request)}
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Review
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDecline(request.id)}
-                          className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                        >
-                          <X className="h-4 w-4 mr-2" />
-                          Decline
-                        </Button>
-
-                        <Button
-                          size="sm"
-                          onClick={() => handleAccept(request.id)}
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                        >
-                          <Check className="h-4 w-4 mr-2" />
-                          Accept
-                        </Button>
+                        {/* Only show action buttons on Pending tab */}
+                        {activeTab === 'pending' ? (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleReview(request)}
+                            >
+                              <Eye className="h-4 w-4 mr-2" /> Review
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDecline(request.id)}
+                              disabled={
+                                processingId === request.id ||
+                                actionMutation.isPending
+                              }
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                            >
+                              {processingId === request.id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />{' '}
+                                  Declining...
+                                </>
+                              ) : (
+                                <>
+                                  <X className="h-4 w-4 mr-2" /> Decline
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleAccept(request.id)}
+                              disabled={
+                                processingId === request.id ||
+                                actionMutation.isPending
+                              }
+                              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                            >
+                              {processingId === request.id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />{' '}
+                                  Approving...
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="h-4 w-4 mr-2" /> Accept
+                                </>
+                              )}
+                            </Button>
+                          </>
+                        ) : (
+                          <Badge
+                            variant={
+                              activeTab === 'approved'
+                                ? 'default'
+                                : 'destructive'
+                            }
+                            className="px-4 py-2 text-sm"
+                          >
+                            {activeTab === 'approved'
+                              ? '✓ Approved'
+                              : '✕ Rejected'}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -374,6 +472,9 @@ export function RequestsPage() {
           request={selectedRequest}
           onAccept={() => handleAccept(selectedRequest.id)}
           onDecline={() => handleDecline(selectedRequest.id)}
+          isProcessing={
+            actionMutation.isPending && processingId === selectedRequest.id
+          }
         />
       )}
     </div>
