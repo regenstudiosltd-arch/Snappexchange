@@ -43,21 +43,17 @@ function getJwtExpiration(token: string): number {
     const decodedJson = Buffer.from(payloadBase64, 'base64').toString();
     const payload = JSON.parse(decodedJson);
     return payload.exp * 1000;
-  } catch (e) {
+  } catch {
     return 0;
   }
 }
 
 async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
-    const response = await axios.post(
-      `${
-        process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api'
-      }/auth/token/refresh/`,
-      {
-        refresh: token.refreshToken,
-      }
-    );
+    const url = process.env.NEXT_PUBLIC_API_URL;
+    const response = await axios.post(`${url}/auth/token/refresh/`, {
+      refresh: token.refreshToken,
+    });
 
     const { access, refresh } = response.data;
 
