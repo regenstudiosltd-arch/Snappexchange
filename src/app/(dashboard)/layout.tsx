@@ -8,7 +8,7 @@ import { DashboardLayout } from '@/src/components/DashboardLayout';
 export default function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -45,7 +45,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
       </div>
     );
@@ -56,7 +56,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <DashboardHeader
         currentPage={currentPage}
         onNavigate={handleNavigate}
