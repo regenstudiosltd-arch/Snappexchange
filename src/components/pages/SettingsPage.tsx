@@ -15,6 +15,7 @@ import {
   MapPin,
   CheckCircle,
   AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import {
   Card,
@@ -60,11 +61,13 @@ export function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="text-center py-12 text-muted-foreground animate-pulse">
-        Loading settings...
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
+        <p className="text-sm md:text-lg animate-pulse">Loading settings...</p>
       </div>
     );
   }
+
   if (error || !backendProfile) {
     return (
       <div className="text-center py-12 text-destructive">
@@ -379,7 +382,14 @@ function SettingsForm({ backendProfile }: { backendProfile: UserProfile }) {
               disabled={profileMutation.isPending}
               className="bg-cyan-500 hover:bg-cyan-600 text-white"
             >
-              {profileMutation.isPending ? 'Saving Profile...' : 'Save Profile'}
+              {profileMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Saving Profile...
+                </>
+              ) : (
+                'Save Profile'
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -448,9 +458,14 @@ function SettingsForm({ backendProfile }: { backendProfile: UserProfile }) {
               disabled={payoutMutation.isPending}
               className="bg-cyan-500 hover:bg-cyan-600 text-white"
             >
-              {payoutMutation.isPending
-                ? 'Saving Payout...'
-                : 'Update Payout Account'}
+              {payoutMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Saving Payout...
+                </>
+              ) : (
+                'Update Payout Account'
+              )}
             </Button>
           </CardContent>
         </Card>
@@ -585,7 +600,7 @@ function SettingsForm({ backendProfile }: { backendProfile: UserProfile }) {
           </CardContent>
         </Card>
 
-        {/* SECURITY SETTINGS - FULLY UPDATED WITH PASSWORD CHANGE */}
+        {/* SECURITY SETTINGS  */}
         <Card className="bg-card border-border">
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -674,9 +689,14 @@ function SettingsForm({ backendProfile }: { backendProfile: UserProfile }) {
                 disabled={passwordMutation.isPending}
                 variant="outline"
               >
-                {passwordMutation.isPending
-                  ? 'Updating Password...'
-                  : 'Update Password'}
+                {passwordMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Updating Password...
+                  </>
+                ) : (
+                  'Update Password'
+                )}
               </Button>
             </div>
 
