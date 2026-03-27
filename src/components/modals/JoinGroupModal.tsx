@@ -1,10 +1,9 @@
 'use client';
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Search,
   Users,
-  DollarSign,
+  Banknote,
   Calendar,
   Check,
   Loader2,
@@ -29,8 +28,12 @@ import {
   CardTitle,
 } from '../ui/card';
 import { Alert, AlertDescription } from '../ui/alert';
+import { Badge } from '../ui/badge';
 import { apiClient } from '@/src/lib/axios';
+import { authService } from '@/src/services/auth.service';
 import { AxiosError } from 'axios';
+import { toast } from 'sonner';
+import { useQuery } from '@tanstack/react-query';
 
 interface Group {
   id: number;
@@ -60,11 +63,29 @@ export function JoinGroupModal({
   const [showDetails, setShowDetails] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
 
-  // Form State
+  // Form State (only used when NOT already a member)
   const [joiningId, setJoiningId] = useState<number | null>(null);
   const [joinReason, setJoinReason] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
 
+  // USER'S CURRENT MEMBERSHIPS
+  const { data: myJoinedData } = useQuery({
+    queryKey: ['my-joined-groups'],
+    queryFn: authService.getMyJoinedGroups,
+    enabled: isOpen,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const userJoinedGroupIds = useMemo(() => {
+    const joinedGroups = myJoinedData?.results || myJoinedData || [];
+    return new Set(joinedGroups.map((g: Group) => g.id));
+  }, [myJoinedData]);
+
+  const selectedGroupData = groups.find((g) => g.id === selectedGroupId);
+  const isAlreadyMember =
+    selectedGroupId !== null && userJoinedGroupIds.has(selectedGroupId);
+
+  // Fetch public groups
   const fetchGroups = useCallback(async (query: string = '') => {
     setIsLoading(true);
     setError(null);
@@ -87,41 +108,41 @@ export function JoinGroupModal({
     if (isOpen) {
       fetchGroups(searchQuery);
     } else {
-      // Reset state when modal closes
       setShowDetails(false);
       setSelectedGroupId(null);
       setJoinReason('');
       setTermsAccepted(false);
+      setJoiningId(null);
     }
   }, [isOpen, searchQuery, fetchGroups]);
 
   const handleJoinRequest = async (groupId: number) => {
     if (!termsAccepted) return;
-
     setJoiningId(groupId);
     try {
-      const idempotencyKey = self.crypto.randomUUID();
+      const idempotencyKey = crypto.randomUUID();
       const response = await apiClient.post(
         `/accounts/groups/${groupId}/request_join/`,
         { reason: joinReason },
         { headers: { 'X-Idempotency-Key': idempotencyKey } },
       );
 
-      alert(response.data.message || 'Join request sent successfully!');
+      toast.success('Request Sent', {
+        description: response.data.message || 'Join request sent successfully!',
+      });
       onClose();
     } catch (err) {
       const axiosError = err as AxiosError<{ error?: string; detail?: string }>;
-      alert(
-        axiosError.response?.data?.error ||
+      toast.error('Join Request Failed', {
+        description:
+          axiosError.response?.data?.error ||
           axiosError.response?.data?.detail ||
-          'Failed to join',
-      );
+          'Failed to send join request. Please try again.',
+      });
     } finally {
       setJoiningId(null);
     }
   };
-
-  const selectedGroupData = groups.find((g) => g.id === selectedGroupId);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -138,7 +159,7 @@ export function JoinGroupModal({
         </DialogHeader>
 
         {!showDetails ? (
-          /* LIST VIEW */
+          /*  LIST VIEW  */
           <div className="space-y-6 py-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -165,53 +186,67 @@ export function JoinGroupModal({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {groups.length > 0 ? (
-                  groups.map((group) => (
-                    <Card
-                      key={group.id}
-                      className="hover:shadow-md transition-all cursor-pointer bg-card border-border hover:border-primary/50"
-                      onClick={() => {
-                        setSelectedGroupId(group.id);
-                        setShowDetails(true);
-                      }}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-lg font-semibold text-foreground">
-                            {group.group_name}
-                          </CardTitle>
-                          <span className="text-xs font-bold uppercase tracking-wide bg-primary/10 text-primary px-2.5 py-1 rounded-full">
-                            {group.frequency}
-                          </span>
-                        </div>
-                        <CardDescription className="mt-1">
-                          Admin: {group.admin_name}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {group.description ||
-                            'Join this group to start your savings journey together.'}
-                        </p>
-                        <div className="flex items-center justify-between text-sm pt-3 border-t border-border">
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Users className="h-4 w-4 text-primary" />
-                            <span>
-                              {group.current_members}/{group.expected_members}
-                            </span>
+                  groups.map((group) => {
+                    const alreadyJoined = userJoinedGroupIds.has(group.id);
+                    return (
+                      <Card
+                        key={group.id}
+                        className={`hover:shadow-md transition-all cursor-pointer bg-card border-border hover:border-primary/50 ${
+                          alreadyJoined ? 'opacity-90' : ''
+                        }`}
+                        onClick={() => {
+                          setSelectedGroupId(group.id);
+                          setShowDetails(true);
+                        }}
+                      >
+                        <CardHeader className="pb-3">
+                          <div className="flex justify-between items-start">
+                            <CardTitle className="text-lg font-semibold text-foreground">
+                              {group.group_name}
+                            </CardTitle>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold uppercase tracking-wide bg-primary/10 text-primary px-2.5 py-1 rounded-full">
+                                {group.frequency}
+                              </span>
+                              {alreadyJoined && (
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 text-[10px]"
+                                >
+                                  ✓ Joined
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 font-medium text-foreground">
-                            <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
-                            <span>
-                              ₵
-                              {parseFloat(
-                                group.contribution_amount,
-                              ).toLocaleString()}
-                            </span>
+                          <CardDescription className="mt-1">
+                            Admin: {group.admin_name}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {group.description ||
+                              'Join this group to start your savings journey together.'}
+                          </p>
+                          <div className="flex items-center justify-between text-sm pt-3 border-t border-border">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Users className="h-4 w-4 text-primary" />
+                              <span>
+                                {group.current_members}/{group.expected_members}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 font-medium text-foreground">
+                              <span>
+                                ₵
+                                {parseFloat(
+                                  group.contribution_amount,
+                                ).toLocaleString()}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
+                        </CardContent>
+                      </Card>
+                    );
+                  })
                 ) : (
                   <div className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-xl bg-muted/30">
                     <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -225,7 +260,7 @@ export function JoinGroupModal({
             )}
           </div>
         ) : (
-          /* DETAIL VIEW */
+          /*  DETAIL VIEW  */
           selectedGroupData && (
             <div className="space-y-6 py-4">
               {/* Header Card */}
@@ -250,9 +285,8 @@ export function JoinGroupModal({
                     {selectedGroupData.expected_members}
                   </div>
                 </div>
-
                 <div className="text-center p-5 bg-card border border-border rounded-xl">
-                  <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-600 dark:text-green-400" />
+                  <Banknote className="h-6 w-6 mx-auto mb-2 text-green-600 dark:text-green-400" />
                   <div className="text-xs text-muted-foreground mb-1">
                     Contribution
                   </div>
@@ -263,7 +297,6 @@ export function JoinGroupModal({
                     ).toLocaleString()}
                   </div>
                 </div>
-
                 <div className="text-center p-5 bg-card border border-border rounded-xl">
                   <Calendar className="h-6 w-6 mx-auto mb-2 text-orange-600 dark:text-orange-400" />
                   <div className="text-xs text-muted-foreground mb-1">
@@ -309,38 +342,50 @@ export function JoinGroupModal({
                 </ul>
               </div>
 
-              {/* User Input Section */}
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    Introduction (Optional)
-                  </label>
-                  <Textarea
-                    placeholder="Tell the admin why you'd like to join this circle..."
-                    value={joinReason}
-                    onChange={(e) => setJoinReason(e.target.value)}
-                    className="min-h-25 bg-background"
-                  />
+              {/* CONDITIONAL MEMBER STATE */}
+              {isAlreadyMember ? (
+                <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-6 rounded-2xl text-center">
+                  <Check className="h-8 w-8 text-emerald-600 mx-auto mb-3" />
+                  <h4 className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">
+                    You&apos;re already a member!
+                  </h4>
+                  <p className="text-emerald-600 dark:text-emerald-500 text-sm">
+                    You created or joined this savings group. No need to request
+                    again.
+                  </p>
                 </div>
-
-                <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-xl border border-border">
-                  <input
-                    type="checkbox"
-                    id="terms"
-                    className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                    checked={termsAccepted}
-                    onChange={(e) => setTermsAccepted(e.target.checked)}
-                  />
-                  <label
-                    htmlFor="terms"
-                    className="text-sm text-muted-foreground leading-normal cursor-pointer"
-                  >
-                    I have read and agree to abide by the group rules and
-                    contribution schedule. I understand that financial
-                    commitment is essential for the circle&apos;s success.
-                  </label>
+              ) : (
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                      Introduction (Optional)
+                    </label>
+                    <Textarea
+                      placeholder="Tell the admin why you'd like to join this circle..."
+                      value={joinReason}
+                      onChange={(e) => setJoinReason(e.target.value)}
+                      className="min-h-25 bg-background"
+                    />
+                  </div>
+                  <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-xl border border-border">
+                    <input
+                      type="checkbox"
+                      id="terms"
+                      className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                    />
+                    <label
+                      htmlFor="terms"
+                      className="text-sm text-muted-foreground leading-normal cursor-pointer"
+                    >
+                      I have read and agree to abide by the group rules and
+                      contribution schedule. I understand that financial
+                      commitment is essential for the circle&apos;s success.
+                    </label>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Footer Actions */}
               <div className="flex gap-3 pt-5 border-t border-border">
@@ -353,22 +398,33 @@ export function JoinGroupModal({
                   Back to Groups
                 </Button>
 
-                <Button
-                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-                  disabled={
-                    !termsAccepted || joiningId === selectedGroupData.id
-                  }
-                  onClick={() => handleJoinRequest(selectedGroupData.id)}
-                >
-                  {joiningId === selectedGroupData.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <>
-                      <Check className="h-4 w-4 mr-2" />
-                      Send Join Request
-                    </>
-                  )}
-                </Button>
+                {isAlreadyMember ? (
+                  <Button
+                    variant="secondary"
+                    className="flex-1 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900 dark:text-emerald-300"
+                    disabled
+                  >
+                    <Check className="h-4 w-4 mr-2" />
+                    Already a Member
+                  </Button>
+                ) : (
+                  <Button
+                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    disabled={
+                      !termsAccepted || joiningId === selectedGroupData.id
+                    }
+                    onClick={() => handleJoinRequest(selectedGroupData.id)}
+                  >
+                    {joiningId === selectedGroupData.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Send Join Request
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           )
