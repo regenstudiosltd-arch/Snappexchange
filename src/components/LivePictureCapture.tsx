@@ -1,127 +1,149 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect } from "react";
-import { Camera, RotateCcw, Check } from "lucide-react";
-import { Button } from "./ui/button";
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Camera, RotateCcw, Check } from 'lucide-react';
+import { Button } from './ui/button';
+import Image from 'next/image';
+import { toast } from 'sonner';
 
 interface LivePictureCaptureProps {
   onCapture: (imageData: string) => void;
   capturedImage: string | null;
 }
 
-export function LivePictureCapture({ onCapture, capturedImage }: LivePictureCaptureProps) {
+export function LivePictureCapture({
+  onCapture,
+  capturedImage,
+}: LivePictureCaptureProps) {
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState<string>('');
+  const [isVideoReady, setIsVideoReady] = useState(false);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const startCamera = async () => {
+  // START CAMERA
+  const startCamera = useCallback(async () => {
     try {
-      setError("");
+      setError('');
+      setIsVideoReady(false);
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: "user",
-          width: { ideal: 640 },
-          height: { ideal: 480 }
-        }
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       });
-      
+
       setStream(mediaStream);
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-    } catch (err: any) {
-      // Handle different types of camera errors
-      let errorMessage = "Unable to access camera. ";
-      
-      if (err.name === "NotAllowedError") {
-        errorMessage += "Camera permission was denied. Please allow camera access in your browser settings and try again.";
-      } else if (err.name === "NotFoundError") {
-        errorMessage += "No camera device found. Please connect a camera and try again.";
-      } else if (err.name === "NotReadableError") {
-        errorMessage += "Camera is being used by another application. Please close other apps and try again.";
+    } catch (err: unknown) {
+      let errorMessage = 'Unable to access camera. ';
+      if (err instanceof DOMException) {
+        if (err.name === 'NotAllowedError')
+          errorMessage += 'Permission denied.';
+        else if (err.name === 'NotFoundError')
+          errorMessage += 'No camera found.';
+        else if (err.name === 'NotReadableError')
+          errorMessage += 'Camera in use.';
       } else {
-        errorMessage += "Please check your camera settings and try again.";
+        errorMessage += 'Please check your settings.';
       }
-      
       setError(errorMessage);
     }
-  };
+  }, []);
 
-  const stopCamera = () => {
+  // STOP CAMERA
+  const stopCamera = useCallback(() => {
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       setStream(null);
+      setIsVideoReady(false);
     }
-  };
+  }, [stream]);
 
+  // ATTACH STREAM TO VIDEO
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+
+      videoRef.current
+        .play()
+        .catch((e) => console.error('Video play failed:', e));
+
+      videoRef.current.onloadedmetadata = () => {
+        setIsVideoReady(true);
+      };
+    }
+  }, [stream]);
+
+  // CAPTURE
   const captureImage = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
+    if (!videoRef.current || !canvasRef.current || !isVideoReady) {
+      toast.error('Camera not ready', {
+        description: 'Please wait for the video stream to initialize.',
+      });
+      return;
+    }
 
-      if (ctx) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0);
-        
-        const imageData = canvas.toDataURL("image/jpeg", 0.8);
-        onCapture(imageData);
-        stopCamera();
-      }
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+
+    if (ctx && video.videoWidth > 0) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+
+      const imageData = canvas.toDataURL('image/jpeg', 0.92);
+      onCapture(imageData);
+      stopCamera();
+
+      toast.success('Photo captured successfully!');
     }
   };
 
   const retake = () => {
-    onCapture("");
-    startCamera();
+    onCapture('');
   };
 
+  // CLEANUP
   useEffect(() => {
     return () => {
-      stopCamera();
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
     };
-  }, []);
+  }, [stream]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="relative w-full max-w-md mx-auto">
+        {/* Placeholder / Start screen */}
         {!stream && !capturedImage && (
-          <div className="aspect-square bg-gray-100 rounded-2xl flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300">
-            <Camera className="h-16 w-16 text-gray-400 mb-4" />
-            <p className="text-sm text-muted-foreground text-center mb-4">
+          <div className="aspect-square bg-muted/30 rounded-2xl flex flex-col items-center justify-center p-10 border-2 border-dashed border-border">
+            <Camera className="h-16 w-16 text-muted-foreground mb-5" />
+            <p className="text-sm text-muted-foreground text-center mb-6">
               Take a live picture for verification
             </p>
-            <Button onClick={startCamera} className="bg-cyan-500 hover:bg-cyan-600">
+            <Button
+              onClick={startCamera}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
               <Camera className="h-4 w-4 mr-2" />
               Open Camera
             </Button>
           </div>
         )}
 
+        {/* Live video preview with overlay */}
         {stream && !capturedImage && (
-          <div className="relative aspect-square rounded-2xl overflow-hidden border-2 border-cyan-500">
-            {/* Face Guide Overlay */}
+          <div className="relative aspect-square rounded-2xl overflow-hidden border-2 border-primary">
+            {/* Face guide overlay */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
               <div className="relative w-64 h-64">
-                {/* Rounded square guide */}
-                <div className="absolute inset-0 border-4 border-cyan-500 rounded-full opacity-50" />
-                <div className="absolute inset-0 border-2 border-dashed border-white rounded-full" />
-                
-                {/* Corner markers */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-cyan-400 rounded-tl-3xl" />
-                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-cyan-400 rounded-tr-3xl" />
-                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-cyan-400 rounded-bl-3xl" />
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-cyan-400 rounded-br-3xl" />
-              </div>
-            </div>
-
-            {/* Helper text */}
-            <div className="absolute top-4 left-0 right-0 text-center z-10">
-              <div className="inline-block bg-black/50 text-white px-4 py-2 rounded-full text-sm backdrop-blur-sm">
-                Position your face within the circle
+                <div className="absolute inset-0 border-4 border-primary/60 rounded-full" />
+                <div className="absolute inset-0 border-2 border-dashed border-primary/40 rounded-full animate-pulse" />
               </div>
             </div>
 
@@ -135,17 +157,18 @@ export function LivePictureCapture({ onCapture, capturedImage }: LivePictureCapt
           </div>
         )}
 
+        {/* Captured image preview */}
         {capturedImage && (
-          <div className="relative aspect-square rounded-2xl overflow-hidden border-2 border-green-500">
-            <img
+          <div className="relative aspect-square rounded-2xl overflow-hidden border-2 border-green-500 dark:border-green-400">
+            <Image
               src={capturedImage}
               alt="Captured"
-              className="w-full h-full object-cover"
+              fill
+              unoptimized
+              className="object-cover"
             />
-            <div className="absolute top-4 right-4">
-              <div className="bg-green-500 text-white p-2 rounded-full">
-                <Check className="h-5 w-5" />
-              </div>
+            <div className="absolute top-4 right-4 bg-green-500 dark:bg-green-600 text-white p-2.5 rounded-full shadow-md">
+              <Check className="h-5 w-5" />
             </div>
           </div>
         )}
@@ -153,35 +176,26 @@ export function LivePictureCapture({ onCapture, capturedImage }: LivePictureCapt
         <canvas ref={canvasRef} className="hidden" />
       </div>
 
+      {/* Error message */}
       {error && (
-        <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm space-y-3">
+        <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
           <p>{error}</p>
-          <Button 
-            onClick={startCamera} 
-            variant="outline" 
-            className="w-full border-red-300 text-red-700 hover:bg-red-100"
-          >
-            <Camera className="h-4 w-4 mr-2" />
-            Try Again
-          </Button>
-          <div className="text-xs text-red-600 space-y-1">
-            <p className="font-semibold">Troubleshooting tips:</p>
-            <p>• Check browser permissions (click the lock icon in address bar)</p>
-            <p>• Allow camera access when prompted</p>
-            <p>• Make sure no other app is using the camera</p>
-            <p>• Try refreshing the page</p>
-          </div>
         </div>
       )}
 
+      {/* Controls */}
       {stream && !capturedImage && (
         <div className="flex gap-3 justify-center">
           <Button variant="outline" onClick={stopCamera}>
             Cancel
           </Button>
-          <Button onClick={captureImage} className="bg-cyan-500 hover:bg-cyan-600">
+          <Button
+            onClick={captureImage}
+            disabled={!isVideoReady}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
             <Camera className="h-4 w-4 mr-2" />
-            Capture Photo
+            {isVideoReady ? 'Capture Photo' : 'Waiting for camera...'}
           </Button>
         </div>
       )}
@@ -194,12 +208,6 @@ export function LivePictureCapture({ onCapture, capturedImage }: LivePictureCapt
           </Button>
         </div>
       )}
-
-      <div className="text-xs text-muted-foreground text-center space-y-1">
-        <p>• Ensure good lighting</p>
-        <p>• Face the camera directly</p>
-        <p>• Remove sunglasses or face coverings</p>
-      </div>
     </div>
   );
 }

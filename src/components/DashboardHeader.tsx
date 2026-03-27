@@ -7,6 +7,7 @@ import Image from 'next/image';
 import logoImage from '../assets/logo.png';
 import { useSession } from 'next-auth/react';
 import { apiClient } from '@/src/lib/axios';
+import { cn } from './ui/utils';
 
 interface DashboardHeaderProps {
   currentPage: string;
@@ -90,11 +91,11 @@ export function DashboardHeader({
   const displayInitial = userProfile.fullName
     ? userProfile.fullName.charAt(0).toUpperCase()
     : userProfile.email
-    ? userProfile.email.charAt(0).toUpperCase()
-    : 'U';
+      ? userProfile.email.charAt(0).toUpperCase()
+      : 'U';
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Left: Navigation */}
@@ -113,7 +114,9 @@ export function DashboardHeader({
               variant="ghost"
               size="icon"
               onClick={() => onNavigate('Dashboard')}
-              className={currentPage === 'Dashboard' ? 'bg-muted' : ''}
+              className={cn(
+                currentPage === 'Dashboard' && 'bg-muted text-foreground',
+              )}
             >
               <Home className="h-5 w-5" />
             </Button>
@@ -127,8 +130,10 @@ export function DashboardHeader({
               className="h-10 w-10 rounded-[10px]"
             />
             <div className="hidden sm:block">
-              <div className="text-lg font-semibold">SnappX</div>
-              <div className="text-xs text-gray-600">
+              <div className="text-lg font-semibold text-foreground">
+                SnappX
+              </div>
+              <div className="text-xs text-muted-foreground">
                 Empowering Collective Growth
               </div>
             </div>
@@ -149,16 +154,18 @@ export function DashboardHeader({
               >
                 <Bell className="h-5 w-5" />
                 {notifications.some((n) => n.unread) && (
-                  <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-cyan-500" />
+                  <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
                 )}
               </Button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 rounded-lg border border-gray-200 bg-white shadow-lg">
-                  <div className="p-4 border-b border-gray-200">
-                    <h3 className="font-semibold mb-3">Notifications</h3>
+                <div className="absolute right-0 mt-2 w-80 rounded-lg border border-border bg-card shadow-lg overflow-hidden">
+                  <div className="p-4 border-b border-border">
+                    <h3 className="font-semibold text-foreground mb-3">
+                      Notifications
+                    </h3>
 
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-3 text-sm">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -169,9 +176,9 @@ export function DashboardHeader({
                               groupPaymentReminders: e.target.checked,
                             })
                           }
-                          className="rounded border-gray-300"
+                          className="rounded border-border text-primary focus:ring-primary"
                         />
-                        <span className="text-gray-500">
+                        <span className="text-muted-foreground">
                           Group payment reminders
                         </span>
                       </label>
@@ -185,9 +192,9 @@ export function DashboardHeader({
                               payoutDateReminders: e.target.checked,
                             })
                           }
-                          className="rounded border-gray-300"
+                          className="rounded border-border text-primary focus:ring-primary"
                         />
-                        <span className="text-gray-500">
+                        <span className="text-muted-foreground">
                           Payout date reminders
                         </span>
                       </label>
@@ -201,9 +208,9 @@ export function DashboardHeader({
                               goalProgressUpdates: e.target.checked,
                             })
                           }
-                          className="rounded border-gray-300"
+                          className="rounded border-border text-primary focus:ring-primary"
                         />
-                        <span className="text-gray-500">
+                        <span className="text-muted-foreground">
                           Goal progress updates
                         </span>
                       </label>
@@ -214,26 +221,28 @@ export function DashboardHeader({
                     {notifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`p-4 border-b border-gray-200 hover:bg-muted/50 cursor-pointer ${
-                          notification.unread ? 'bg-cyan-50/50' : ''
-                        }`}
+                        className={cn(
+                          'p-4 border-b border-border hover:bg-muted/50 cursor-pointer transition-colors',
+                          notification.unread && 'bg-primary/5',
+                        )}
                       >
                         <div className="flex items-start gap-3">
                           <div
-                            className={`w-2 h-2 rounded-full mt-2 ${
+                            className={cn(
+                              'w-2 h-2 rounded-full mt-2',
                               notification.unread
-                                ? 'bg-cyan-500'
-                                : 'bg-transparent'
-                            }`}
+                                ? 'bg-primary'
+                                : 'bg-transparent',
+                            )}
                           />
                           <div className="flex-1">
-                            <p className="font-medium text-sm">
+                            <p className="font-medium text-sm text-foreground">
                               {notification.title}
                             </p>
-                            <p className="text-sm text-gray-500">
+                            <p className="text-sm text-muted-foreground">
                               {notification.message}
                             </p>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-muted-foreground mt-1">
                               {notification.time}
                             </p>
                           </div>
@@ -242,8 +251,8 @@ export function DashboardHeader({
                     ))}
                   </div>
 
-                  <div className="p-3 text-center border-t border-gray-200">
-                    <button className="text-sm text-cyan-600 hover:underline">
+                  <div className="p-3 text-center border-t border-border">
+                    <button className="text-sm text-primary hover:underline">
                       View All Notifications
                     </button>
                   </div>
@@ -268,22 +277,22 @@ export function DashboardHeader({
                     alt="Profile picture"
                     width={32}
                     height={32}
-                    className="h-8 w-8 rounded-full object-cover"
+                    className="h-8 w-8 rounded-full object-cover border-2 border-primary/30"
                   />
                 ) : (
-                  <div className="h-8 w-8 rounded-full bg-cyan-500 flex items-center justify-center text-white font-medium text-sm">
+                  <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium text-sm shadow-sm">
                     {displayInitial}
                   </div>
                 )}
               </Button>
 
               {showProfile && (
-                <div className="absolute right-0 mt-2 w-64 rounded-lg border border-gray-200 bg-white shadow-lg">
-                  <div className="p-4 border-b border-gray-200">
-                    <p className="font-semibold truncate">
+                <div className="absolute right-0 mt-2 w-64 rounded-lg border border-border bg-card shadow-lg overflow-hidden">
+                  <div className="p-4 border-b border-border">
+                    <p className="font-semibold text-foreground truncate">
                       {userProfile.fullName || 'User'}
                     </p>
-                    <p className="text-sm text-gray-500 truncate">
+                    <p className="text-sm text-muted-foreground truncate">
                       {userProfile.email || 'user@example.com'}
                     </p>
                   </div>
@@ -294,7 +303,7 @@ export function DashboardHeader({
                         onNavigate('Profile');
                         setShowProfile(false);
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-left"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-left transition-colors"
                     >
                       <User className="h-4 w-4" />
                       <span className="text-sm">Profile Settings</span>
@@ -304,23 +313,25 @@ export function DashboardHeader({
                         onNavigate('Settings');
                         setShowProfile(false);
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-left"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-left transition-colors"
                     >
                       <Settings className="h-4 w-4" />
                       <span className="text-sm">Account Settings</span>
                     </button>
                   </div>
 
-                  <div className="p-2 border-t border-gray-200">
+                  <div className="p-2 border-t border-border">
                     <button
                       onClick={() => {
                         setShowProfile(false);
                         onLogout();
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-left text-red-500"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted text-left text-destructive transition-colors"
                     >
-                      <LogOut className="h-4 w-4" />
-                      <span className="text-sm">Sign Out</span>
+                      <LogOut className="h-4 w-4 dark:text-red-600" />
+                      <span className="text-sm dark:text-red-600">
+                        Sign Out
+                      </span>
                     </button>
                   </div>
                 </div>

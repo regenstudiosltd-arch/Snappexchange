@@ -14,16 +14,7 @@ export function Header({ onNavigate }: HeaderProps = {}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header
-      className="
-    sticky top-0 z-50 w-full
-    border-b border-gray-200
-    bg-white/80
-    backdrop-blur-xl backdrop-saturate-150
-    shadow-[0_8px_30px_rgba(0,0,0,0.05)]
-    supports-backdrop-filter:bg-white/60"
-    >
-      <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-white/40 to-transparent" />
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -34,8 +25,10 @@ export function Header({ onNavigate }: HeaderProps = {}) {
               className="h-10 w-10 rounded-[10px]"
             />
             <div className="hidden sm:block">
-              <div className="text-xl">SnappX</div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xl font-semibold text-foreground">
+                SnappX
+              </div>
+              <div className="text-xs text-muted-foreground">
                 Empowering Collective Growth
               </div>
             </div>
@@ -45,25 +38,25 @@ export function Header({ onNavigate }: HeaderProps = {}) {
           <nav className="hidden md:flex items-center gap-8">
             <a
               href="#services"
-              className="text-gray-700 hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Services
             </a>
             <a
               href="#how-it-works"
-              className="text-gray-700 hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               How It Works
             </a>
             <a
               href="#about"
-              className="text-gray-700 hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               About
             </a>
             <a
               href="#testimonials"
-              className="text-gray-700 hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Testimonials
             </a>
@@ -79,7 +72,7 @@ export function Header({ onNavigate }: HeaderProps = {}) {
               Login
             </Button>
             <Button
-              className="bg-cyan-500 hover:bg-cyan-600 text-white cursor-pointer"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground cursor-pointer"
               onClick={() => onNavigate?.('signup')}
             >
               Get Started
@@ -93,45 +86,46 @@ export function Header({ onNavigate }: HeaderProps = {}) {
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? (
-              <X className="h-6 w-6" />
+              <X className="h-6 w-6 text-foreground" />
             ) : (
-              <Menu className="h-6 w-6" />
+              <Menu className="h-6 w-6 text-foreground" />
             )}
           </button>
         </div>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 space-y-4 border-t">
+          <div className="md:hidden py-6 space-y-5 border-t border-border">
             <a
               href="#services"
-              className="block py-2 text-foreground/80 hover:text-foreground"
+              className="block py-2 text-foreground/80 hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Services
             </a>
             <a
               href="#how-it-works"
-              className="block py-2 text-foreground/80 hover:text-foreground"
+              className="block py-2 text-foreground/80 hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               How It Works
             </a>
             <a
               href="#about"
-              className="block py-2 text-foreground/80 hover:text-foreground"
+              className="block py-2 text-foreground/80 hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               About
             </a>
             <a
               href="#testimonials"
-              className="block py-2 text-foreground/80 hover:text-foreground"
+              className="block py-2 text-foreground/80 hover:text-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Testimonials
             </a>
-            <div className="flex flex-col gap-3 pt-4">
+
+            <div className="flex flex-col gap-3 pt-6">
               <Button
                 variant="outline"
                 className="w-full"
@@ -143,7 +137,7 @@ export function Header({ onNavigate }: HeaderProps = {}) {
                 Login
               </Button>
               <Button
-                className="w-full bg-cyan-500 hover:bg-cyan-600"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 onClick={() => {
                   onNavigate?.('signup');
                   setMobileMenuOpen(false);

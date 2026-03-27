@@ -14,23 +14,25 @@ export function Footer() {
   }, []);
 
   return (
-    <footer className="bg-gray-900 text-white">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer className="bg-background border-t border-border">
+      <div className="container mx-auto px-4 py-12 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
               <Image
                 src={logoImage}
                 alt="SnappX Logo"
                 className="h-10 w-10 rounded-[10px]"
               />
-              <span className="text-xl">SnappX</span>
+              <span className="text-xl font-semibold text-foreground">
+                SnappX
+              </span>
             </div>
-            <p className="text-gray-400 text-sm mb-4">
+            <p className="text-sm text-muted-foreground">
               Empowering Collective Growth
             </p>
-            <p className="text-gray-400 text-sm">
+            <p className="text-sm text-muted-foreground">
               Modern group savings platform for Ghana, built on trust and
               technology.
             </p>
@@ -38,12 +40,14 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg mb-4">Quick Links</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
+              Quick Links
+            </h3>
+            <ul className="space-y-2.5 text-sm">
               <li>
                 <a
                   href="#services"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Services
                 </a>
@@ -51,7 +55,7 @@ export function Footer() {
               <li>
                 <a
                   href="#how-it-works"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   How It Works
                 </a>
@@ -59,7 +63,7 @@ export function Footer() {
               <li>
                 <a
                   href="#about"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   About Us
                 </a>
@@ -67,7 +71,7 @@ export function Footer() {
               <li>
                 <a
                   href="#testimonials"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Testimonials
                 </a>
@@ -77,12 +81,14 @@ export function Footer() {
 
           {/* Legal */}
           <div>
-            <h3 className="text-lg mb-4">Legal</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="text-lg font-semibold text-foreground mb-4">
+              Legal
+            </h3>
+            <ul className="space-y-2.5 text-sm">
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Privacy Policy
                 </a>
@@ -90,7 +96,7 @@ export function Footer() {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Terms of Service
                 </a>
@@ -98,7 +104,7 @@ export function Footer() {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Security
                 </a>
@@ -106,7 +112,7 @@ export function Footer() {
               <li>
                 <a
                   href="#"
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   FAQ
                 </a>
@@ -116,36 +122,38 @@ export function Footer() {
 
           {/* Contact */}
           <div>
-            <h3 className="text-lg mb-4">Contact Us</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4">
+              Contact Us
+            </h3>
             <ul className="space-y-3 text-sm">
-              <li className="flex items-center gap-2 text-gray-400">
+              <li className="flex items-center gap-2 text-muted-foreground">
                 <Phone className="h-4 w-4" />
                 <div>
                   <a
                     href="tel:0541413623"
-                    className="hover:text-white transition-colors"
+                    className="hover:text-foreground transition-colors"
                   >
                     0541413623
                   </a>
                   <br />
                   <a
                     href="tel:0500581423"
-                    className="hover:text-white transition-colors"
+                    className="hover:text-foreground transition-colors"
                   >
                     0500581423
                   </a>
                 </div>
               </li>
-              <li className="flex items-center gap-2 text-gray-400">
+              <li className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="h-4 w-4" />
                 <a
                   href="mailto:hello@snappx.app"
-                  className="hover:text-white transition-colors"
+                  className="hover:text-foreground transition-colors"
                 >
                   hello@snappx.app
                 </a>
               </li>
-              <li className="flex items-center gap-2 text-gray-400">
+              <li className="flex items-center gap-2 text-muted-foreground">
                 <MapPin className="h-4 w-4" />
                 <span>Adenta, Ghana</span>
               </li>
@@ -153,7 +161,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+        <div className="border-t border-border mt-12 pt-8 text-center text-sm text-muted-foreground">
           <p suppressHydrationWarning>
             &copy; {year ?? '...'} SnappX. All rights reserved.
           </p>

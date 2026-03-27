@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Star, Quote } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import Image from 'next/image';
+import { cn } from './ui/utils';
 
 const testimonials = [
   {
@@ -45,64 +46,68 @@ export function Testimonials() {
 
   const previous = () => {
     setCurrentIndex(
-      (prev) => (prev - 1 + testimonials.length) % testimonials.length
+      (prev) => (prev - 1 + testimonials.length) % testimonials.length,
     );
   };
 
   return (
     <section id="testimonials" className="py-16 md:py-24 bg-background">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl mb-4">What Our Users Say</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+        <div className="text-center mb-12 space-y-3">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground">
+            What Our Users Say
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Join thousands of satisfied Ghanaians who trust SnappX for their
             savings
           </p>
         </div>
 
         <div className="max-w-4xl mx-auto">
-          <Card className="border-2 border-gray-200 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-[#F59E0B]/20 to-transparent" />
-            <CardContent className="p-8 md:p-12">
-              <Quote className="h-12 w-12 text-[#F59E0B]/20 mb-6" />
+          <Card className="border-border bg-card relative overflow-hidden shadow-lg">
+            {/* Decorative gradient corner */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-primary/10 to-transparent" />
 
-              <div className="grid md:grid-cols-[200px,1fr] gap-8 items-center ">
+            <CardContent className="p-8 md:p-12">
+              <Quote className="h-12 w-12 text-primary/20 mb-6" />
+
+              <div className="grid md:grid-cols-[200px,1fr] gap-8 items-center">
                 {/* User Image */}
                 <div className="mx-auto md:mx-0">
                   <div className="relative">
-                    <div className="absolute -inset-2 bg-linear-to-br from-[#DC2626] via-[#F59E0B] to-[#059669] rounded-full opacity-50 blur-lg" />
+                    <div className="absolute -inset-2 bg-linear-to-br from-primary/20 via-accent/20 to-primary/20 rounded-full blur-lg opacity-50" />
                     <Image
                       src={testimonials[currentIndex].image}
                       alt={testimonials[currentIndex].name}
                       width={160}
                       height={160}
-                      className="relative bg-white w-40 h-40 rounded-full object-cover border-4 border-background"
+                      className="relative w-40 h-40 rounded-full object-cover border-4 border-background shadow-md"
                     />
                   </div>
                 </div>
 
                 {/* Content */}
-                <div>
-                  <div className="flex mb-4">
+                <div className="space-y-5">
+                  <div className="flex">
                     {[...Array(testimonials[currentIndex].rating)].map(
                       (_, i) => (
                         <Star
                           key={i}
                           className="h-5 w-5 fill-[#F59E0B] text-[#F59E0B]"
                         />
-                      )
+                      ),
                     )}
                   </div>
 
-                  <p className="text-lg mb-6 leading-relaxed">
+                  <p className="text-lg leading-relaxed text-foreground">
                     &quot;{testimonials[currentIndex].content}&quot;
                   </p>
 
                   <div>
-                    <div className="text-lg font-medium">
+                    <div className="text-lg font-medium text-foreground">
                       {testimonials[currentIndex].name}
                     </div>
-                    <div className="text-gray-600">
+                    <div className="text-sm text-muted-foreground">
                       {testimonials[currentIndex].role}
                     </div>
                   </div>
@@ -112,11 +117,12 @@ export function Testimonials() {
           </Card>
 
           {/* Navigation */}
-          <div className="flex items-center justify-center gap-4 mt-8">
+          <div className="flex items-center justify-center gap-6 mt-10">
             <Button
               size="icon"
+              variant="outline"
               onClick={previous}
-              className="rounded-full bg-gray-50 border border-gray-200"
+              className="rounded-full"
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
@@ -126,11 +132,12 @@ export function Testimonials() {
                 <button
                   key={index}
                   onClick={() => setCurrentIndex(index)}
-                  className={`h-2 rounded-full transition-all ${
+                  className={cn(
+                    'h-2.5 rounded-full transition-all duration-300',
                     index === currentIndex
-                      ? 'w-8 bg-[#F59E0B]'
-                      : 'w-2 bg-gray-300'
-                  }`}
+                      ? 'w-10 bg-primary'
+                      : 'w-2.5 bg-muted hover:bg-muted-foreground/70',
+                  )}
                   aria-label={`Go to testimonial ${index + 1}`}
                 />
               ))}
@@ -138,8 +145,9 @@ export function Testimonials() {
 
             <Button
               size="icon"
+              variant="outline"
               onClick={next}
-              className="rounded-full bg-gray-50 border border-gray-200"
+              className="rounded-full"
             >
               <ChevronRight className="h-5 w-5" />
             </Button>
