@@ -65,28 +65,31 @@ export function DashboardLayout({
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex items-center justify-around p-2 z-40">
-        {menuItems.slice(0, 5).map((item) => {
-          const Icon = item.icon;
-          const isActive = currentPage === item.page;
-          return (
-            <button
-              key={item.page}
-              onClick={() => onNavigate(item.page)}
-              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
-                isActive
-                  ? 'text-primary'
-                  : 'text-foreground/70 hover:text-foreground'
-              }`}
-            >
-              <Icon className="h-5 w-5" />
-              <span className="text-xs">{item.label}</span>
-            </button>
-          );
-        })}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 overflow-x-auto no-scrollbar snap-x snap-mandatory">
+        <div className="flex items-center px-4 py-3 gap-3 min-w-max">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentPage === item.page;
+            return (
+              <button
+                key={item.page}
+                onClick={() => onNavigate(item.page)}
+                className={`flex flex-col items-center gap-1 px-5 py-2 rounded-2xl transition-all shrink-0 snap-center min-w-19.5 ${
+                  isActive
+                    ? 'text-primary bg-primary/10'
+                    : 'text-foreground/70 hover:text-foreground active:bg-muted'
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-xs font-medium whitespace-nowrap">
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
-      {/* Spacing for mobile bottom nav */}
       <div className="md:hidden h-20" />
     </div>
   );
