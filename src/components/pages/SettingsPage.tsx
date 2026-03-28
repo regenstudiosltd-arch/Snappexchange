@@ -256,7 +256,7 @@ function SettingsForm({ backendProfile }: { backendProfile: UserProfile }) {
 
   return (
     <>
-      <div className="space-y-6 max-w-4xl mb-16 md:mb-0">
+      <div className="space-y-6 max-w-4xl mb-20 md:mb-0">
         <div>
           <h1 className="text-3xl font-bold mb-1 text-foreground">Settings</h1>
           <p className="text-muted-foreground">

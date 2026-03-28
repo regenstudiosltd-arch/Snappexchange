@@ -98,7 +98,7 @@ export function GroupsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mb-20 md:mb-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="mb-1 text-[24px] md:text-3xl font-bold">My Groups</h1>

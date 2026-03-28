@@ -150,7 +150,7 @@ export function AIAssistantPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-12rem)] flex flex-col space-y-4">
+    <div className="h-[calc(100vh-12rem)] flex flex-col space-y-4 mb-20 md:mb-0">
       {/* Header */}
       <Card className="bg-card border-border">
         <CardHeader className="pb-4">

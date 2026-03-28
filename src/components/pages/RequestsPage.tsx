@@ -200,7 +200,7 @@ export function RequestsPage() {
   }
 
   return (
-    <div className="space-y-6 md:mb-0 mb-16">
+    <div className="space-y-6 md:mb-0 mb-20">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>

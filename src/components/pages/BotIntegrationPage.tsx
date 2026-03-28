@@ -64,8 +64,8 @@ export function BotIntegrationPage() {
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Hero Section – gradient adapts via dark: prefix */}
+    <div className="space-y-6 mb-20 md:mb-0">
+      {/* Hero Section */}
       <Card className="bg-linear-to-br from-cyan-500 to-teal-600 text-primary-foreground border-none">
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">

@@ -251,7 +251,7 @@ export function GoalsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mb-20 md:mb-0">
       {/* Overview Card */}
       <Card className="bg-linear-to-br from-cyan-500 to-teal-600 text-white rounded-2xl border-none shadow-lg">
         <CardHeader className="pb-2">
