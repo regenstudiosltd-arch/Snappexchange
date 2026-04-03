@@ -1,16 +1,19 @@
+// src/app/page.tsx
+
 'use client';
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Header } from '@/src/components/Header';
-import { Hero } from '@/src/components/Hero';
-import { Services } from '@/src/components/Services';
-import { HowItWorks } from '@/src/components/HowItWorks';
-import { About } from '@/src/components/About';
-import { Testimonials } from '@/src/components/Testimonials';
-import { CTA } from '@/src/components/CTA';
-import { Footer } from '@/src/components/Footer';
+import { Header } from '@/src/components/landingPage/Header';
+import { Hero } from '@/src/components/landingPage/Hero';
+import { Services } from '@/src/components/landingPage/Services';
+import { HowItWorks } from '@/src/components/landingPage/HowItWorks';
+import { About } from '@/src/components/landingPage/About';
+import { Testimonials } from '@/src/components/landingPage/Testimonials';
+import { CTA } from '@/src/components/landingPage/CTA';
+import { Footer } from '@/src/components/landingPage/Footer';
+import { BackToTop } from '@/src/components/landingPage/BackToTop';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -37,6 +40,7 @@ export default function LandingPage() {
       <Testimonials />
       <CTA onNavigate={handleNavigate} />
       <Footer />
+      <BackToTop />
     </main>
   );
 }

@@ -1,21 +1,23 @@
+// src/components/AppClient.tsx
+
 'use client';
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Header } from '../components/Header';
-import { Hero } from '../components/Hero';
-import { Services } from '../components/Services';
-import { HowItWorks } from '../components/HowItWorks';
-import { About } from '../components/About';
-import { Testimonials } from '../components/Testimonials';
-import { CTA } from '../components/CTA';
-import { Footer } from '../components/Footer';
+import { Header } from './landingPage/Header';
+import { Hero } from './landingPage/Hero';
+import { Services } from './landingPage/Services';
+import { HowItWorks } from './landingPage/HowItWorks';
+import { About } from './landingPage/About';
+import { Testimonials } from './landingPage/Testimonials';
+import { CTA } from './landingPage/CTA';
+import { Footer } from './landingPage/Footer';
 import { SignupEnhanced } from '../components/auth/SignupEnhanced';
 import { LoginEnhanced } from '../components/auth/LoginEnhanced';
 import { OTPVerification } from '../components/auth/OTPVerification';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { DashboardHeader } from '../components/DashboardHeader';
-import { DashboardHomeEnhanced } from '../components/pages/DashboardHomeEnhanced';
+import { DashboardHomeEnhanced } from './pages/DashboardPageEnhanced';
 import { GoalsPage } from '../components/pages/GoalsPage';
 import { GroupsPage } from '../components/pages/GroupsPage';
 import { RequestsPage } from '../components/pages/RequestsPage';

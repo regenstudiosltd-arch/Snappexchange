@@ -1,6 +1,8 @@
+// src/app/(dashboard)dashboard/page.tsx
+
 'use client';
 
-import { DashboardHomeEnhanced } from '@/src/components/pages/DashboardHomeEnhanced';
+import { DashboardHomeEnhanced } from '@/src/components/pages/DashboardPageEnhanced';
 import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {

@@ -1,3 +1,5 @@
+// src/app/(auth)/otp/page.tsx
+
 'use client';
 
 import { Suspense } from 'react';

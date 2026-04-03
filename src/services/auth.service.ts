@@ -1,9 +1,12 @@
+// src/services/auth.service.ts
+
 import { apiClient } from '@/src/lib/axios';
 import {
   SignupForm,
   UserProfile,
   ProfileUpdatePayload,
 } from '@/src/lib/schemas';
+import { getSession } from 'next-auth/react';
 
 export const authService = {
   signup: async (data: SignupForm) => {
@@ -177,5 +180,85 @@ export const authService = {
       },
     );
     return response.data;
+  },
+
+  forgotPassword: async (login_field: string) => {
+    const response = await apiClient.post('/auth/forgot-password/', {
+      login_field: login_field.trim().toLowerCase(),
+    });
+    return response.data;
+  },
+
+  resetPassword: async (payload: {
+    phone: string;
+    code: string;
+    password: string;
+    confirmPassword: string;
+  }) => {
+    const idempotencyKey = crypto.randomUUID();
+    const response = await apiClient.post(
+      '/auth/reset-password/',
+      {
+        phone: payload.phone,
+        code: payload.code,
+        password: payload.password,
+        password2: payload.confirmPassword,
+      },
+      {
+        headers: { 'X-Idempotency-Key': idempotencyKey },
+      },
+    );
+    return response.data;
+  },
+
+  aiChat: async (
+    messages: { role: 'user' | 'assistant'; content: string }[],
+    onChunk: (text: string) => void,
+    signal?: AbortSignal,
+  ): Promise<void> => {
+    const session = await getSession();
+    const token = session?.user?.accessToken;
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/accounts/ai/chat/`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        signal,
+        body: JSON.stringify({ messages }),
+      },
+    );
+
+    if (response.status === 401) throw new Error('auth');
+    if (!response.ok) throw new Error(`http_${response.status}`);
+
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const lines = decoder.decode(value, { stream: true }).split('\n');
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6); // NO .trim()
+        if (raw.trim() === '[DONE]') return;
+        if (raw.trim().startsWith('[ERROR]')) {
+          throw new Error(
+            raw.trim().replace('[ERROR]', '').trim() || 'AI service error',
+          );
+        }
+        try {
+          onChunk(JSON.parse(raw));
+        } catch {
+          onChunk(raw); // fallback
+        }
+      }
+    }
   },
 };

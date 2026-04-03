@@ -1,3 +1,5 @@
+// src/lib/schema.ts
+
 import { z } from 'zod';
 
 export const loginSchema = z.object({
@@ -21,6 +23,9 @@ export const signupSchema = z
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirmPassword: z.string().min(8, 'Confirm Password is required'),
     profilePicture: z.any().optional(),
+    agreeToTerms: z.boolean().refine((val) => val === true, {
+      message: 'You must agree to the terms and conditions',
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
@@ -67,6 +72,31 @@ export const goalSchema = z.object({
   target_date: z.string().min(1, 'Target date is required'),
   frequency: z.enum(['daily', 'weekly', 'monthly']),
 });
+
+export const forgotPasswordSchema = z.object({
+  login_field: z
+    .string()
+    .min(9, 'Phone number must be at least 9 digits')
+    .regex(/^\+?233[0-9]{9}$|^0[0-9]{9}$/, {
+      message:
+        'Please enter a valid Ghanaian phone number (e.g. 0551234567 or +233551234567)',
+    }),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    phone: z.string().min(1),
+    code: z.string().length(6, 'OTP must be 6 digits'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z.string().min(8),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+
+export type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
 export type GoalFormData = z.infer<typeof goalSchema>;
 export type Goal = {
