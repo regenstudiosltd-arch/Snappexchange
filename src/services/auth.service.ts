@@ -28,7 +28,7 @@ export const authService = {
 
     const response = await apiClient.post('/auth/signup/', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        // 'Content-Type': 'multipart/form-data',
         'X-Idempotency-Key': idempotencyKey,
       },
     });
