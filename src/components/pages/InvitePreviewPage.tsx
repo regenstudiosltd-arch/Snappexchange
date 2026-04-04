@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { decodeHtmlEntities } from '@/src/lib/html';
 import {
   Users,
   Calendar,
@@ -238,25 +239,6 @@ export function InvitePreviewPage({ token }: { token: string }) {
         <div className="absolute bottom-0 -left-20 h-48 w-48 rounded-full bg-cyan-400/6 blur-3xl" />
       </div>
 
-      {/* ── Header bar ── */}
-      <header className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-border/50 backdrop-blur-sm bg-background/80">
-        <div className="flex items-center gap-2.5">
-          {/* SnappX wordmark */}
-          <div className="h-8 w-8 rounded-lg bg-linear-to-br from-cyan-500 to-teal-600 flex items-center justify-center shadow-sm">
-            <span className="text-white font-black text-sm">S</span>
-          </div>
-          <span className="font-bold text-lg tracking-tight">SnappX</span>
-        </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => router.push('/login')}
-          className="text-muted-foreground text-sm"
-        >
-          Sign in
-        </Button>
-      </header>
-
       {/* ── Main content ── */}
       <main className="relative z-10 flex-1 flex items-center justify-center p-4 md:p-8">
         <div
@@ -309,7 +291,7 @@ export function InvitePreviewPage({ token }: { token: string }) {
               {/* ── Description ── */}
               {data.description && (
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {data.description}
+                  {decodeHtmlEntities(data.description)}
                 </p>
               )}
 
