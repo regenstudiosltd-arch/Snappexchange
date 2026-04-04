@@ -8,6 +8,7 @@ export default withAuth({
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|signup|otp|forgot-password|$).*)',
+    // Exclude: api, static files, auth pages, AND the public invite preview route
+    '/((?!api|_next/static|_next/image|favicon.ico|signup|otp|forgot-password|invite|$).*)',
   ],
 };
