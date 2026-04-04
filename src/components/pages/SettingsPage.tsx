@@ -134,8 +134,8 @@ function SettingsErrorState({ onRetry }: { onRetry: () => void }) {
           Couldn&apos;t load your profile
         </h2>
         <p className="text-sm text-muted-foreground leading-relaxed mb-7 max-w-65">
-          There was a problem fetching your settings. This is usually temporary
-          — try again or go back.
+          There was a problem fetching your settings. This is usually temporary.
+          Try again or go back.
         </p>
 
         {/* Actions */}
