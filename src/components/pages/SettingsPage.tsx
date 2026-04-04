@@ -2,11 +2,14 @@
 
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
 import {
+  ArrowLeft,
+  Loader2,
+  RotateCcw,
   AlertCircle,
   User,
   CreditCard,
@@ -102,6 +105,90 @@ const PasswordSuccessModal = dynamic(() =>
   })),
 );
 
+function SettingsErrorState({ onRetry }: { onRetry: () => void }) {
+  const router = useRouter();
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const handleRetry = () => {
+    setIsRetrying(true);
+    // Small delay so the spinner is visible before the page reloads
+    setTimeout(() => onRetry(), 600);
+  };
+
+  return (
+    <div
+      role="alert"
+      className="flex items-center justify-center min-h-min-h-105 px-4"
+    >
+      <div className="w-full max-w-sm bg-card border border-border/60 rounded-2xl p-10 flex flex-col items-center text-center shadow-sm animate-in fade-in slide-in-from-bottom-3 duration-300">
+        {/* Icon with pulsing ring */}
+        <div className="relative w-16 h-16 flex items-center justify-center mb-6">
+          <span className="absolute inset-0 rounded-full bg-destructive/10 animate-ping opacity-20" />
+          <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10">
+            <AlertCircle className="h-7 w-7 text-destructive" aria-hidden />
+          </div>
+        </div>
+
+        {/* Copy */}
+        <h2 className="text-base font-semibold text-foreground mb-2 tracking-tight">
+          Couldn&apos;t load your profile
+        </h2>
+        <p className="text-sm text-muted-foreground leading-relaxed mb-7 max-w-65">
+          There was a problem fetching your settings. This is usually temporary
+          — try again or go back.
+        </p>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-2.5 w-full">
+          <button
+            onClick={handleRetry}
+            disabled={isRetrying}
+            className="flex items-center justify-center gap-2 w-full h-10 px-4 rounded-xl
+                       bg-destructive/10 hover:bg-destructive/15 border border-destructive/20
+                       text-destructive text-sm font-medium
+                       transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isRetrying ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                Retrying…
+              </>
+            ) : (
+              <>
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                Try again
+              </>
+            )}
+          </button>
+
+          <div className="flex items-center gap-3 my-0.5">
+            <span className="flex-1 h-px bg-border/50" />
+            <span className="text-[10px] text-muted-foreground/50 uppercase tracking-widest">
+              or
+            </span>
+            <span className="flex-1 h-px bg-border/50" />
+          </div>
+
+          <button
+            onClick={() => router.back()}
+            className="flex items-center justify-center gap-2 w-full h-10 px-4 rounded-xl
+                       bg-transparent hover:bg-muted/60 border border-border/60
+                       text-muted-foreground text-sm
+                       transition-all"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+            Go back
+          </button>
+        </div>
+
+        <p className="text-[11px] text-muted-foreground/40 mt-6 leading-relaxed">
+          Still stuck? Try clearing your browser cache.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Nav config ───────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
   { id: 'profile', label: 'Profile', icon: User },
@@ -159,15 +246,7 @@ export function SettingsPage() {
   if (isLoading || status === 'loading') return <SettingsSkeleton />;
 
   if (error || !backendProfile) {
-    return (
-      <div
-        role="alert"
-        className="flex items-center justify-center gap-2 py-20 text-destructive text-sm"
-      >
-        <AlertCircle className="h-5 w-5" aria-hidden />
-        Failed to load profile. Please refresh the page.
-      </div>
-    );
+    return <SettingsErrorState onRetry={() => window.location.reload()} />;
   }
 
   return <SettingsForm backendProfile={backendProfile} />;
