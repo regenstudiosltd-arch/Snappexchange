@@ -1,3 +1,5 @@
+// src/components/pages/RequestPage.tsx
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -393,6 +395,7 @@ export function RequestsPage() {
     null,
   );
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const { data: stats } = useQuery({
     queryKey: STATS_QUERY_KEY,
@@ -463,13 +466,91 @@ export function RequestsPage() {
       id: number;
       action: 'approve' | 'reject';
     }) => authService.actionJoinRequest(id, action),
+
+    onMutate: async ({ id, action }) => {
+      setActionError(null);
+
+      // Cancel any in-flight re-fetches so they don't overwrite the optimistic update
+      await queryClient.cancelQueries({ queryKey: REQUESTS_QUERY_KEY });
+
+      // Build the exact keys for the current tab and the target tab
+      const currentKey = [
+        ...REQUESTS_QUERY_KEY,
+        activeTab,
+        adminGroups.map((g) => g.id),
+      ];
+
+      const targetTab = action === 'approve' ? 'approved' : 'rejected';
+      const targetKey = [
+        ...REQUESTS_QUERY_KEY,
+        targetTab,
+        adminGroups.map((g) => g.id),
+      ];
+
+      // Snapshot the previous states for rollback
+      const previousRequests =
+        queryClient.getQueryData<JoinRequest[]>(currentKey);
+      const previousStats = queryClient.getQueryData(STATS_QUERY_KEY);
+
+      // 1. Optimistically remove the request from the current tab
+      let movedRequest: JoinRequest | undefined;
+      queryClient.setQueryData<JoinRequest[]>(currentKey, (old = []) => {
+        movedRequest = old.find((r) => r.id === id);
+        return old.filter((r) => r.id !== id);
+      });
+
+      // 2. Optimistically add the request to the target tab
+      if (movedRequest) {
+        queryClient.setQueryData<JoinRequest[]>(targetKey, (old = []) => [
+          { ...movedRequest!, status: targetTab },
+          ...old,
+        ]);
+      }
+
+      // 3. Optimistically update all the stats
+      if (activeTab === 'pending') {
+        queryClient.setQueryData<{
+          pending?: number;
+          accepted?: number;
+          declined?: number;
+        }>(STATS_QUERY_KEY, (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pending: Math.max(0, (old.pending ?? 1) - 1),
+            accepted:
+              action === 'approve' ? (old.accepted ?? 0) + 1 : old.accepted,
+            declined:
+              action === 'reject' ? (old.declined ?? 0) + 1 : old.declined,
+          };
+        });
+      }
+
+      return { previousRequests, previousStats, currentKey };
+    },
+
+    onError: (_err, _vars, context) => {
+      // Roll the UI back to what it was before the optimistic update
+      if (context) {
+        queryClient.setQueryData(context.currentKey, context.previousRequests);
+        queryClient.setQueryData(STATS_QUERY_KEY, context.previousStats);
+      }
+      setActionError('Action failed. Please try again.');
+    },
+
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: REQUESTS_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
+      // Close modals immediately for snappy UX
       setIsProfileModalOpen(false);
+      setSelectedRequest(null);
+
+      // Delay the invalidation to give the backend time to commit the transaction.
+      // This prevents React Query from instantly fetching stale data and reverting the UI.
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: REQUESTS_QUERY_KEY });
+        queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
+      }, 500);
     },
   });
-
   const handleAccept = (requestId: number) =>
     actionMutation.mutate({ id: requestId, action: 'approve' });
   const handleDecline = (requestId: number) =>
@@ -508,6 +589,12 @@ export function RequestsPage() {
           </p>
         </div>
       </div>
+
+      {actionError && (
+        <Alert variant="destructive">
+          <AlertDescription>{actionError}</AlertDescription>
+        </Alert>
+      )}
 
       <RequestsStats stats={stats} />
 
