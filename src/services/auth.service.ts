@@ -261,4 +261,32 @@ export const authService = {
       }
     }
   },
+
+  getInviteLink: async (groupId: string) => {
+    const response = await apiClient.get(`/accounts/groups/${groupId}/invite/`);
+    return response.data;
+  },
+
+  regenerateInviteLink: async (groupId: string) => {
+    const response = await apiClient.post(
+      `/accounts/groups/${groupId}/invite/`,
+    );
+    return response.data;
+  },
+
+  getInvitePreview: async (token: string) => {
+    // Public endpoint — no auth header needed
+    const response = await apiClient.get(`/accounts/invite/${token}/`);
+    return response.data;
+  },
+
+  requestJoinGroup: async (groupId: number, reason: string = '') => {
+    const idempotencyKey = crypto.randomUUID();
+    const response = await apiClient.post(
+      `/accounts/groups/${groupId}/request_join/`,
+      { reason },
+      { headers: { 'X-Idempotency-Key': idempotencyKey } },
+    );
+    return response.data;
+  },
 };
