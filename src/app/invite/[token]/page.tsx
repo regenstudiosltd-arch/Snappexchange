@@ -1,5 +1,3 @@
-// src/app/invite/[token]/page.tsx
-
 import { InvitePreviewPage } from '@/src/components/pages/InvitePreviewPage';
 
 export default async function Page({
@@ -12,6 +10,6 @@ export default async function Page({
 }
 
 export const metadata = {
-  title: 'Join a Savings Group — SnappX',
+  title: 'Join a Savings Group. SnappX',
   description: "You've been invited to join a savings circle on SnappX.",
 };
