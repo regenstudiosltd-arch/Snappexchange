@@ -1,5 +1,3 @@
-// src/components/pages/RequestPage.tsx
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -25,6 +23,7 @@ import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Alert, AlertDescription } from '../ui/alert';
 import { UserProfileModal } from '../modals/UserProfileModal';
+import { RequestsPageError } from '../ErrorStates';
 
 import { authService } from '@/src/services/auth.service';
 import { cn } from '../ui/utils';
@@ -75,29 +74,21 @@ function RequestCardSkeleton() {
     <Card className="border-l-4 border-l-muted animate-pulse">
       <CardContent className="pt-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          {/* Left: avatar + info */}
           <div className="flex items-start gap-4 flex-1">
-            {/* Avatar circle */}
             <div className="rounded-full p-3 bg-muted h-14 w-14 shrink-0" />
-
             <div className="flex-1 space-y-2">
-              {/* Name + group badge row */}
               <div className="flex items-center flex-wrap gap-2 mb-2">
                 <div className="h-4 w-32 rounded bg-muted" />
                 <div className="h-5 w-24 rounded-full bg-muted" />
               </div>
-              {/* Reason line */}
               <div className="h-3.5 w-full rounded bg-muted" />
               <div className="h-3.5 w-4/5 rounded bg-muted" />
-              {/* Date row */}
               <div className="flex items-center gap-2 pt-1">
                 <div className="h-3 w-3 rounded bg-muted" />
                 <div className="h-3 w-20 rounded bg-muted" />
               </div>
             </div>
           </div>
-
-          {/* Right: action buttons */}
           <div className="flex flex-wrap gap-2">
             <div className="h-8 w-24 rounded-md bg-muted" />
             <div className="h-8 w-24 rounded-md bg-muted" />
@@ -109,32 +100,24 @@ function RequestCardSkeleton() {
   );
 }
 
-/** Full page skeleton */
 function RequestsPageSkeleton() {
   return (
     <div className="space-y-6 md:mb-0 mb-20">
-      {/* Page header: title + subtitle */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 animate-pulse">
         <div className="space-y-2">
           <div className="h-8 w-48 rounded-lg bg-muted" />
           <div className="h-4 w-56 rounded bg-muted" />
         </div>
       </div>
-
-      {/* Stats row */}
       <div className="grid gap-4 md:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <StatCardSkeleton key={i} />
         ))}
       </div>
-
-      {/* Filter card: search + tab buttons */}
       <Card className="animate-pulse">
         <CardHeader>
           <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search input */}
             <div className="h-10 flex-1 rounded-md bg-muted" />
-            {/* Tab buttons */}
             <div className="flex gap-2">
               <div className="h-8 w-24 rounded-md bg-muted" />
               <div className="h-8 w-24 rounded-md bg-muted" />
@@ -143,7 +126,6 @@ function RequestsPageSkeleton() {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Request cards */}
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
               <RequestCardSkeleton key={i} />
@@ -403,7 +385,12 @@ export function RequestsPage() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const { data: groupsData, isLoading: isGroupsLoading } = useQuery({
+  const {
+    data: groupsData,
+    isLoading: isGroupsLoading,
+    error: groupsError,
+    refetch: refetchGroups,
+  } = useQuery({
     queryKey: MY_GROUPS_QUERY_KEY,
     queryFn: authService.getMyJoinedGroups,
     staleTime: 1000 * 60 * 5,
@@ -420,8 +407,8 @@ export function RequestsPage() {
   const {
     data: requestsForTab = [],
     isLoading,
-    error,
-    refetch,
+    error: requestsError,
+    refetch: refetchRequests,
   } = useQuery<JoinRequest[]>({
     queryKey: [...REQUESTS_QUERY_KEY, activeTab, adminGroups.map((g) => g.id)],
     queryFn: async () => {
@@ -469,11 +456,8 @@ export function RequestsPage() {
 
     onMutate: async ({ id, action }) => {
       setActionError(null);
-
-      // Cancel any in-flight re-fetches so they don't overwrite the optimistic update
       await queryClient.cancelQueries({ queryKey: REQUESTS_QUERY_KEY });
 
-      // Build the exact keys for the current tab and the target tab
       const currentKey = [
         ...REQUESTS_QUERY_KEY,
         activeTab,
@@ -487,19 +471,16 @@ export function RequestsPage() {
         adminGroups.map((g) => g.id),
       ];
 
-      // Snapshot the previous states for rollback
       const previousRequests =
         queryClient.getQueryData<JoinRequest[]>(currentKey);
       const previousStats = queryClient.getQueryData(STATS_QUERY_KEY);
 
-      // 1. Optimistically remove the request from the current tab
       let movedRequest: JoinRequest | undefined;
       queryClient.setQueryData<JoinRequest[]>(currentKey, (old = []) => {
         movedRequest = old.find((r) => r.id === id);
         return old.filter((r) => r.id !== id);
       });
 
-      // 2. Optimistically add the request to the target tab
       if (movedRequest) {
         queryClient.setQueryData<JoinRequest[]>(targetKey, (old = []) => [
           { ...movedRequest!, status: targetTab },
@@ -507,7 +488,6 @@ export function RequestsPage() {
         ]);
       }
 
-      // 3. Optimistically update all the stats
       if (activeTab === 'pending') {
         queryClient.setQueryData<{
           pending?: number;
@@ -530,7 +510,6 @@ export function RequestsPage() {
     },
 
     onError: (_err, _vars, context) => {
-      // Roll the UI back to what it was before the optimistic update
       if (context) {
         queryClient.setQueryData(context.currentKey, context.previousRequests);
         queryClient.setQueryData(STATS_QUERY_KEY, context.previousStats);
@@ -539,18 +518,15 @@ export function RequestsPage() {
     },
 
     onSuccess: () => {
-      // Close modals immediately for snappy UX
       setIsProfileModalOpen(false);
       setSelectedRequest(null);
-
-      // Delay the invalidation to give the backend time to commit the transaction.
-      // This prevents React Query from instantly fetching stale data and reverting the UI.
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: REQUESTS_QUERY_KEY });
         queryClient.invalidateQueries({ queryKey: STATS_QUERY_KEY });
       }, 500);
     },
   });
+
   const handleAccept = (requestId: number) =>
     actionMutation.mutate({ id: requestId, action: 'approve' });
   const handleDecline = (requestId: number) =>
@@ -570,11 +546,33 @@ export function RequestsPage() {
     );
   }, [requestsForTab, searchQuery]);
 
-  // Show skeleton while groups OR requests are still loading — this prevents
-  // NoAdminGroupsState from flashing before groupsData has arrived.
+  // Show skeleton while either query is in flight
   if (isGroupsLoading || isLoading) return <RequestsPageSkeleton />;
 
-  // Only evaluate admin membership after groups have fully loaded.
+  // ── Network/server failure on the groups fetch ────────────────────────────
+  // This MUST come before the adminGroups.length check.
+  // Without it, a failed fetch leaves groupsData undefined → adminGroups = []
+  // → the user sees "No groups yet" instead of an error, which is wrong.
+  if (groupsError) {
+    return (
+      <div className="space-y-6 md:mb-0 mb-20">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+            Join Requests
+          </h1>
+          <p className="text-muted-foreground">
+            Manage requests to join your groups
+          </p>
+        </div>
+        <RequestsPageError
+          onRetry={() => {
+            refetchGroups();
+          }}
+        />
+      </div>
+    );
+  }
+
   if (adminGroups.length === 0) return <NoAdminGroupsState />;
 
   return (
@@ -664,19 +662,9 @@ export function RequestsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {error ? (
-            <Alert variant="destructive">
-              <AlertDescription className="flex items-center gap-2">
-                Failed to load join requests.
-                <Button
-                  variant="link"
-                  onClick={() => refetch()}
-                  className="h-auto p-0 underline"
-                >
-                  Retry
-                </Button>
-              </AlertDescription>
-            </Alert>
+          {/* ── Network failure on the requests fetch (tab-level) ── */}
+          {requestsError ? (
+            <RequestsPageError onRetry={() => refetchRequests()} />
           ) : filteredRequests.length === 0 ? (
             <EmptyRequestsState activeTab={activeTab} />
           ) : (
