@@ -33,7 +33,7 @@ const testimonials = [
     name: 'Ama Osei',
     role: 'Nurse',
     image:
-      'https://images.unsplash.com/photo-1744880034743-7d75853080ea?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+      'https://images.pexels.com/photos/7155735/pexels-photo-7155735.jpeg?_gl=1*rp06s1*_ga*NjI2NTQ4NTUzLjE3NzU0MTgyNzQ.*_ga_8JE65Q40S6*czE3NzU0MTgyNzQkbzEkZzEkdDE3NzU0MTk1MTMkajU4JGwwJGgw',
     content:
       'Our susu group of 10 nurses has saved over ₵50,000 together. SnappX makes it so easy to track contributions and manage payouts.',
     rating: 5,
