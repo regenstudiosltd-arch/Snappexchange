@@ -1,24 +1,19 @@
-// src/components/pages/DashboardPageEnhanced.tsx
-
 'use client';
 
 import dynamic from 'next/dynamic';
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-// ── Skeletons ──────────────────────────────────────────────────────────────────
+// ── Skeletons
 import { DashboardSkeleton } from '../dashboard/sections/DashboardSkeletons';
 import { ActivitySkeleton } from '../dashboard/sections/RecentActivitySection/components/ActivitySkeleton';
 import { ScheduledSkeleton } from '../dashboard/sections/ScheduledContributionSection/ScheduledSkeleton';
 
-// ── Section components ─────────────────────────────────────────────────────────
+// ── Section components
 import { TotalSavingsCard } from '../dashboard/sections/TotalSavingsCard';
 import { QuickActions } from '../dashboard/sections/QuickActions';
-// import { SavingsGroupsSection } from '../dashboard/sections/SavingsGroupsSection';
-// import { FinancialGoalsSection } from '../dashboard/sections/FinancialGoalsSection';
-// import { WalletBalanceCard } from '../dashboard/sections/WalletBalanceCard';
-// import { RecentActivity } from '../dashboard/sections/RecentActivitySection/RecentActivity';
-// import { ScheduledContributions } from '../dashboard/sections/ScheduledContributionSection/ScheduledContributions';
+
+import { usePendingInvite } from '@/src/hooks/usePendingInvite';
 
 const RecentActivity = dynamic(
   () =>
@@ -60,12 +55,7 @@ const SavingsGroupsSection = dynamic(
   { loading: () => <div className="h-40 rounded-xl bg-muted animate-pulse" /> },
 );
 
-// ── Modals ─────────────────────────────────────────────────────────────────────
-// import { CreateGroupModal } from '../modals/CreateGroupModal/CreateGroupModal';
-// import { CashOutModal } from '@/src/components/modals/CashOutModal';
-// import { JoinGroupModal } from '../modals/JoinGroupModal/JoinGroupModal';
-// import { TopUpWalletModal } from '@/src/components/modals/TopUpWalletModal';
-
+// ── Modals
 const CreateGroupModal = dynamic(() =>
   import('../modals/CreateGroupModal/CreateGroupModal').then((m) => ({
     default: m.CreateGroupModal,
@@ -90,14 +80,8 @@ const TopUpWalletModal = dynamic(() =>
   })),
 );
 
-// ── Services & types ───────────────────────────────────────────────────────────
+// ── Services & types
 import { authService } from '@/src/services/auth.service';
-// import type {
-//   DashboardResponse,
-//   GoalsDashboardResponse,
-//   DashboardHomeEnhancedProps,
-// } from '../dashboard/types';
-
 import type {
   DashboardResponse,
   GoalsDashboardResponse,
@@ -109,7 +93,12 @@ const STALE_TIME = 1000 * 60 * 5;
 export function DashboardHomeEnhanced({
   onNavigate,
 }: DashboardHomeEnhancedProps) {
-  // ── UI state ─────────────────────────────────────────────────────────────────
+  // ── Process any pending invite from sessionStorage.
+  //    If found: auto-joins the group and redirects to its detail page.
+  //    This hook is a no-op when there is no pending invite.
+  usePendingInvite();
+
+  // ── UI state
   const [showBalance, setShowBalance] = useState(true);
   const [savingsExpanded, setSavingsExpanded] = useState(false);
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
@@ -117,7 +106,7 @@ export function DashboardHomeEnhanced({
   const [isCashOutOpen, setIsCashOutOpen] = useState(false);
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
 
-  // ── Data fetching ─────────────────────────────────────────────────────────────
+  // ── Data fetching
   const { data: dashboardData, isLoading: isDashboardLoading } =
     useQuery<DashboardResponse>({
       queryKey: ['dashboard'],
@@ -132,7 +121,7 @@ export function DashboardHomeEnhanced({
       staleTime: STALE_TIME,
     });
 
-  // ── Derived values ────────────────────────────────────────────────────────────
+  // ── Derived values
   const totalSavings = useMemo(
     () =>
       dashboardData?.total_savings ? Number(dashboardData.total_savings) : 0,
@@ -158,7 +147,7 @@ export function DashboardHomeEnhanced({
     [goalsData],
   );
 
-  // ── Handlers ──────────────────────────────────────────────────────────────────
+  // ── Handlers
   const toggleBalance = () => setShowBalance((prev) => !prev);
   const toggleSavingsExpanded = () => setSavingsExpanded((prev) => !prev);
 
@@ -166,12 +155,12 @@ export function DashboardHomeEnhanced({
     // Side-effect handler; extend with toast/refetch as needed
   };
 
-  // ── Early return: loading ─────────────────────────────────────────────────────
+  // ── Early return: loading
   if (isDashboardLoading || isGoalsLoading) {
     return <DashboardSkeleton />;
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────────
+  // ── Render
   return (
     <div className="space-y-6 mb-18 md:mb-0">
       {/* Hero savings card */}
@@ -242,6 +231,235 @@ export function DashboardHomeEnhanced({
     </div>
   );
 }
+
+// // src/components/pages/DashboardPageEnhanced.tsx
+
+// 'use client';
+
+// import dynamic from 'next/dynamic';
+// import { useState, useMemo } from 'react';
+// import { useQuery } from '@tanstack/react-query';
+
+// // ── Skeletons
+// import { DashboardSkeleton } from '../dashboard/sections/DashboardSkeletons';
+// import { ActivitySkeleton } from '../dashboard/sections/RecentActivitySection/components/ActivitySkeleton';
+// import { ScheduledSkeleton } from '../dashboard/sections/ScheduledContributionSection/ScheduledSkeleton';
+
+// // ── Section components
+// import { TotalSavingsCard } from '../dashboard/sections/TotalSavingsCard';
+// import { QuickActions } from '../dashboard/sections/QuickActions';
+
+// const RecentActivity = dynamic(
+//   () =>
+//     import('../dashboard/sections/RecentActivitySection/RecentActivity').then(
+//       (m) => ({ default: m.RecentActivity }),
+//     ),
+//   { loading: () => <ActivitySkeleton /> },
+// );
+
+// const FinancialGoalsSection = dynamic(
+//   () =>
+//     import('../dashboard/sections/FinancialGoalsSection').then((m) => ({
+//       default: m.FinancialGoalsSection,
+//     })),
+//   { loading: () => <div className="h-40 rounded-xl bg-muted animate-pulse" /> },
+// );
+
+// const ScheduledContributions = dynamic(
+//   () =>
+//     import('../dashboard/sections/ScheduledContributionSection/ScheduledContributions').then(
+//       (m) => ({ default: m.ScheduledContributions }),
+//     ),
+//   { loading: () => <ScheduledSkeleton /> },
+// );
+
+// const WalletBalanceCard = dynamic(
+//   () =>
+//     import('../dashboard/sections/WalletBalanceCard').then((m) => ({
+//       default: m.WalletBalanceCard,
+//     })),
+//   { loading: () => <div className="h-40 rounded-xl bg-muted animate-pulse" /> },
+// );
+
+// const SavingsGroupsSection = dynamic(
+//   () =>
+//     import('../dashboard/sections/SavingsGroupsSection').then((m) => ({
+//       default: m.SavingsGroupsSection,
+//     })),
+//   { loading: () => <div className="h-40 rounded-xl bg-muted animate-pulse" /> },
+// );
+
+// // ── Modals
+// const CreateGroupModal = dynamic(() =>
+//   import('../modals/CreateGroupModal/CreateGroupModal').then((m) => ({
+//     default: m.CreateGroupModal,
+//   })),
+// );
+
+// const JoinGroupModal = dynamic(() =>
+//   import('../modals/JoinGroupModal/JoinGroupModal').then((m) => ({
+//     default: m.JoinGroupModal,
+//   })),
+// );
+
+// const CashOutModal = dynamic(() =>
+//   import('@/src/components/modals/CashOutModal').then((m) => ({
+//     default: m.CashOutModal,
+//   })),
+// );
+
+// const TopUpWalletModal = dynamic(() =>
+//   import('@/src/components/modals/TopUpWalletModal').then((m) => ({
+//     default: m.TopUpWalletModal,
+//   })),
+// );
+
+// // ── Services & types
+// import { authService } from '@/src/services/auth.service';
+// import type {
+//   DashboardResponse,
+//   GoalsDashboardResponse,
+//   DashboardHomeEnhancedProps,
+// } from '@/src/types/dashboard';
+
+// const STALE_TIME = 1000 * 60 * 5;
+
+// export function DashboardHomeEnhanced({
+//   onNavigate,
+// }: DashboardHomeEnhancedProps) {
+//   // ── UI state
+//   const [showBalance, setShowBalance] = useState(true);
+//   const [savingsExpanded, setSavingsExpanded] = useState(false);
+//   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
+//   const [isJoinGroupOpen, setIsJoinGroupOpen] = useState(false);
+//   const [isCashOutOpen, setIsCashOutOpen] = useState(false);
+//   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
+
+//   // ── Data fetching
+//   const { data: dashboardData, isLoading: isDashboardLoading } =
+//     useQuery<DashboardResponse>({
+//       queryKey: ['dashboard'],
+//       queryFn: authService.dashboard,
+//       staleTime: STALE_TIME,
+//     });
+
+//   const { data: goalsData, isLoading: isGoalsLoading } =
+//     useQuery<GoalsDashboardResponse>({
+//       queryKey: ['goals-dashboard'],
+//       queryFn: authService.goalsDashboard,
+//       staleTime: STALE_TIME,
+//     });
+
+//   // ── Derived values
+//   const totalSavings = useMemo(
+//     () =>
+//       dashboardData?.total_savings ? Number(dashboardData.total_savings) : 0,
+//     [dashboardData],
+//   );
+
+//   const growthText = useMemo(
+//     () => dashboardData?.growth_text || '+0.0% from last month',
+//     [dashboardData],
+//   );
+
+//   const groupSavings = useMemo(
+//     () =>
+//       (dashboardData?.joined_groups ?? []).reduce(
+//         (sum, g) => sum + Number(g.user_total_contribution || 0),
+//         0,
+//       ),
+//     [dashboardData],
+//   );
+
+//   const individualSavings = useMemo(
+//     () => (goalsData?.total_saved ? Number(goalsData.total_saved) : 0),
+//     [goalsData],
+//   );
+
+//   // ── Handlers
+//   const toggleBalance = () => setShowBalance((prev) => !prev);
+//   const toggleSavingsExpanded = () => setSavingsExpanded((prev) => !prev);
+
+//   const handleTopUpComplete: (amount: number, method: string) => void = () => {
+//     // Side-effect handler; extend with toast/refetch as needed
+//   };
+
+//   // ── Early return: loading
+//   if (isDashboardLoading || isGoalsLoading) {
+//     return <DashboardSkeleton />;
+//   }
+
+//   // ── Render
+//   return (
+//     <div className="space-y-6 mb-18 md:mb-0">
+//       {/* Hero savings card */}
+//       <TotalSavingsCard
+//         totalSavings={totalSavings}
+//         growthText={growthText}
+//         individualSavings={individualSavings}
+//         groupSavings={groupSavings}
+//         showBalance={showBalance}
+//         onToggleBalance={toggleBalance}
+//         onCashOut={() => setIsCashOutOpen(true)}
+//         savingsExpanded={savingsExpanded}
+//         onToggleExpanded={toggleSavingsExpanded}
+//       />
+
+//       {/* Quick actions row */}
+//       <QuickActions
+//         onNavigate={onNavigate}
+//         setIsCreateGroupOpen={setIsCreateGroupOpen}
+//         setIsJoinGroupOpen={setIsJoinGroupOpen}
+//       />
+
+//       {/* Groups + Recent Activity */}
+//       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+//         <SavingsGroupsSection groups={dashboardData?.joined_groups ?? []} />
+//         <RecentActivity onNavigate={onNavigate} />
+//       </div>
+
+//       {/* Financial goals */}
+//       <FinancialGoalsSection goalsData={goalsData} onNavigate={onNavigate} />
+
+//       {/* Scheduled contributions + Wallet balance */}
+//       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:items-start">
+//         <ScheduledContributions onNavigate={onNavigate} />
+//         <WalletBalanceCard
+//           showBalance={showBalance}
+//           onToggleBalance={toggleBalance}
+//           onTopUp={() => setIsTopUpOpen(true)}
+//         />
+//       </div>
+
+//       {/* ── Modals ── */}
+//       <CreateGroupModal
+//         isOpen={isCreateGroupOpen}
+//         onClose={() => setIsCreateGroupOpen(false)}
+//         onComplete={(groupData) => console.log('Group created:', groupData)}
+//       />
+//       <JoinGroupModal
+//         isOpen={isJoinGroupOpen}
+//         onClose={() => setIsJoinGroupOpen(false)}
+//       />
+//       <CashOutModal
+//         isOpen={isCashOutOpen}
+//         onClose={() => setIsCashOutOpen(false)}
+//         availableBalance={totalSavings}
+//         payoutAccount={{
+//           provider: 'MTN Momo',
+//           number: '024 XXX XXXX',
+//           name: 'James Daniel',
+//         }}
+//       />
+//       <TopUpWalletModal
+//         isOpen={isTopUpOpen}
+//         onClose={() => setIsTopUpOpen(false)}
+//         onComplete={handleTopUpComplete}
+//         currentBalance={0}
+//       />
+//     </div>
+//   );
+// }
 
 // // src/components/pages/dashboard/DashboardHomeEnhanced.tsx
 
