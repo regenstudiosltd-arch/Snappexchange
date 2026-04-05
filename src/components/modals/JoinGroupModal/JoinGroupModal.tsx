@@ -34,7 +34,7 @@ import { GroupDetailView } from './Groupdetailview';
 import { GroupCard } from './Groupcard';
 import { useDebounce } from '@/src/hooks/useDebounce';
 
-const PAGE_SIZE = 2;
+const PAGE_SIZE = 6;
 const EMPTY_GROUPS: Group[] = [];
 
 interface GroupsPage {
