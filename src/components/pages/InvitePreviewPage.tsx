@@ -397,7 +397,7 @@ export function InvitePreviewPage({ token }: { token: string }) {
                   className={cn(
                     'w-full h-12 rounded-xl flex items-center justify-center gap-2',
                     'text-sm font-semibold transition-all duration-150',
-                    'bg-zinc-900 text-white',
+                    'bg-linear-to-br from-cyan-500 to-teal-600 text-white',
                     'dark:bg-white dark:text-zinc-900',
                     'hover:opacity-90 active:scale-[0.98]',
                     'shadow-[0_2px_8px_rgba(0,0,0,0.14)]',
