@@ -1,8 +1,18 @@
+// src/components/modals/JoinGroupModal/JoinGroupModal.tsx
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Users, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Users,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
 import { Input } from '../../ui/input';
+import { Button } from '../../ui/button';
 import { Alert, AlertDescription } from '../../ui/alert';
 import {
   Dialog,
@@ -18,34 +28,176 @@ import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 
 import { JoinStep, Group, JoinGroupModalProps } from './types';
-import { filterGroups, extractJoinErrorMessage } from './utils';
+import { extractJoinErrorMessage } from './utils';
 import { STALE_TIME_MS, SEARCH_DEBOUNCE_MS } from './constants';
 import { GroupDetailView } from './Groupdetailview';
 import { GroupCard } from './Groupcard';
 import { useDebounce } from '@/src/hooks/useDebounce';
 
-export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
-  // ── Data ────────────────────────────────────────────────────────────────────
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+const PAGE_SIZE = 2;
+const EMPTY_GROUPS: Group[] = [];
 
-  // ── UI ──────────────────────────────────────────────────────────────────────
+interface GroupsPage {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Group[];
+}
+
+// ── Pagination bar ────────────────────────────────────────────────────────────
+
+interface PaginationBarProps {
+  page: number;
+  totalPages: number;
+  hasPrev: boolean;
+  hasNext: boolean;
+  isFetching: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+}
+
+function PaginationBar({
+  page,
+  totalPages,
+  hasPrev,
+  hasNext,
+  isFetching,
+  onPrev,
+  onNext,
+}: PaginationBarProps) {
+  // Don't render when everything fits on one page
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-between border-t border-border pt-4 mt-2">
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={!hasPrev || isFetching}
+        onClick={onPrev}
+        className="gap-1.5"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Previous
+      </Button>
+
+      <span className="text-sm text-muted-foreground tabular-nums select-none">
+        {isFetching ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin inline-block" />
+        ) : (
+          <>
+            Page {page} of {totalPages}
+          </>
+        )}
+      </span>
+
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={!hasNext || isFetching}
+        onClick={onNext}
+        className="gap-1.5"
+      >
+        Next
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
+// ── Skeleton grid (shown on initial load) ─────────────────────────────────────
+
+function GroupCardSkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-card p-5 space-y-4 animate-pulse">
+      <div className="flex items-start justify-between gap-2">
+        <div className="h-4 w-32 rounded bg-muted" />
+        <div className="h-5 w-14 rounded-full bg-muted" />
+      </div>
+      <div className="h-3 w-24 rounded bg-muted" />
+      <div className="space-y-1.5">
+        <div className="h-3 w-full rounded bg-muted" />
+        <div className="h-3 w-4/5 rounded bg-muted" />
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-muted" />
+      <div className="flex justify-between border-t border-border pt-3">
+        <div className="h-3 w-24 rounded bg-muted" />
+        <div className="h-3 w-12 rounded bg-muted" />
+      </div>
+    </div>
+  );
+}
+
+function GroupGridSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+        <GroupCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
+// ── Main modal ────────────────────────────────────────────────────────────────
+
+export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
+  // ── Pagination & search state ────────────────────────────────────────────────
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedQuery = useDebounce(searchQuery, SEARCH_DEBOUNCE_MS);
+
+  // Reset to page 1 whenever the search term changes so we never land on a
+  // page that doesn't exist for the new result set.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery]);
+
+  // ── Step / selection state ────────────────────────────────────────────────────
   const [step, setStep] = useState<JoinStep>('list');
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
-  const [fetchState, setFetchState] = useState<'idle' | 'loading' | 'error'>(
-    'idle',
-  );
-  const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // ── Form (join request) ──────────────────────────────────────────────────────
+  // ── Join-request form state ──────────────────────────────────────────────────
   const [isJoining, setIsJoining] = useState(false);
   const [joinReason, setJoinReason] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  // ── Debounced search query for filtering ─────────────────────────────────────
-  const debouncedQuery = useDebounce(searchQuery, SEARCH_DEBOUNCE_MS);
+  // ── Reset everything when the modal closes ───────────────────────────────────
+  useEffect(() => {
+    if (!isOpen) {
+      setStep('list');
+      setSelectedGroupId(null);
+      setSearchQuery('');
+      setJoinReason('');
+      setTermsAccepted(false);
+      setPage(1);
+    }
+  }, [isOpen]);
 
-  // ── User's current memberships ───────────────────────────────────────────────
+  // ── Server-side paginated + searched groups ──────────────────────────────────
+  const {
+    data: groupsPage,
+    isLoading, // true only on the very first fetch (no cached data yet)
+    isFetching, // true on every background refetch / page change
+    isError,
+  } = useQuery<GroupsPage>({
+    queryKey: ['all-groups', page, debouncedQuery],
+    queryFn: async () => {
+      const params: Record<string, string | number> = { page };
+      if (debouncedQuery.trim()) params.search = debouncedQuery.trim();
+      const response = await apiClient.get('/accounts/groups/all/', { params });
+      return response.data as GroupsPage;
+    },
+    enabled: isOpen, // don't fetch while the modal is closed
+    staleTime: STALE_TIME_MS,
+  });
+
+  const groups = groupsPage?.results ?? EMPTY_GROUPS;
+  const totalCount = groupsPage?.count ?? 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const hasNext = !!groupsPage?.next;
+  const hasPrev = !!groupsPage?.previous;
+
+  // ── User's existing memberships (to mark cards as "Joined") ─────────────────
   const { data: myJoinedData } = useQuery({
     queryKey: ['my-joined-groups'],
     queryFn: authService.getMyJoinedGroups,
@@ -58,7 +210,7 @@ export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
     return new Set(list.map((g) => g.id));
   }, [myJoinedData]);
 
-  // ── Derived selections ───────────────────────────────────────────────────────
+  // ── Derived selections ────────────────────────────────────────────────────────
   const selectedGroup = useMemo(
     () => groups.find((g) => g.id === selectedGroupId) ?? null,
     [groups, selectedGroupId],
@@ -67,47 +219,7 @@ export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
   const isAlreadyMember =
     selectedGroupId !== null && userJoinedGroupIds.has(selectedGroupId);
 
-  /**
-   * Client-side filtered list. Groups are fetched once on open;
-   * filtering is done in-memory to avoid extra network round-trips.
-   */
-  const filteredGroups = useMemo(
-    () => filterGroups(groups, debouncedQuery),
-    [groups, debouncedQuery],
-  );
-
-  // ── Fetch groups once per open ───────────────────────────────────────────────
-  const fetchGroups = useCallback(async () => {
-    setFetchState('loading');
-    setFetchError(null);
-    try {
-      const response = await apiClient.get('/accounts/groups/all/');
-      setGroups(response.data.results ?? response.data);
-      setFetchState('idle');
-    } catch (err) {
-      const axiosError = err as AxiosError<{ detail?: string }>;
-      setFetchError(
-        axiosError.response?.data?.detail ?? 'Failed to fetch savings groups.',
-      );
-      setFetchState('error');
-    }
-  }, []);
-
-  // Fetch on open; reset state on close.
-  useEffect(() => {
-    if (isOpen) {
-      fetchGroups();
-    } else {
-      // Reset everything so the modal starts fresh next time
-      setStep('list');
-      setSelectedGroupId(null);
-      setSearchQuery('');
-      setJoinReason('');
-      setTermsAccepted(false);
-    }
-  }, [isOpen, fetchGroups]);
-
-  // ── Handlers ─────────────────────────────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────────────
   const handleSelectGroup = useCallback((groupId: number) => {
     setSelectedGroupId(groupId);
     setStep('detail');
@@ -130,7 +242,6 @@ export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
         { reason: joinReason },
         { headers: { 'X-Idempotency-Key': idempotencyKey } },
       );
-
       toast.success('Request Sent', {
         description:
           response.data.message ??
@@ -151,29 +262,23 @@ export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
     }
   }, [selectedGroup, termsAccepted, joinReason, onClose]);
 
-  // ── Render helpers ────────────────────────────────────────────────────────────
+  // ── List-view content ─────────────────────────────────────────────────────────
   const renderListContent = () => {
-    if (fetchState === 'loading') {
-      return (
-        <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 className="h-9 w-9 animate-spin text-primary" />
-          <p className="mt-3 text-sm text-muted-foreground">
-            Finding active circles...
-          </p>
-        </div>
-      );
-    }
+    // Initial skeleton — only shown before the very first response arrives
+    if (isLoading) return <GroupGridSkeleton />;
 
-    if (fetchState === 'error') {
+    if (isError) {
       return (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{fetchError}</AlertDescription>
+          <AlertDescription>
+            Failed to load savings groups. Please try again.
+          </AlertDescription>
         </Alert>
       );
     }
 
-    if (filteredGroups.length === 0) {
+    if (groups.length === 0) {
       const hasQuery = debouncedQuery.trim().length > 0;
       return (
         <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/20 py-16 text-center">
@@ -190,14 +295,23 @@ export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
       );
     }
 
-    return filteredGroups.map((group) => (
-      <GroupCard
-        key={group.id}
-        group={group}
-        isJoined={userJoinedGroupIds.has(group.id)}
-        onClick={() => handleSelectGroup(group.id)}
-      />
-    ));
+    return (
+      // Subtle opacity fade during background page changes to signal loading
+      // without collapsing the layout.
+      <div
+        className="grid grid-cols-1 gap-4 md:grid-cols-2 transition-opacity duration-150"
+        style={{ opacity: isFetching ? 0.55 : 1 }}
+      >
+        {groups.map((group) => (
+          <GroupCard
+            key={group.id}
+            group={group}
+            isJoined={userJoinedGroupIds.has(group.id)}
+            onClick={() => handleSelectGroup(group.id)}
+          />
+        ))}
+      </div>
+    );
   };
 
   // ── JSX ───────────────────────────────────────────────────────────────────────
@@ -218,11 +332,11 @@ export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
         {step === 'list' ? (
           /* ── LIST VIEW ── */
           <div className="space-y-5 py-3">
-            {/* Search input */}
+            {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search by name, admin, or frequency..."
+                placeholder="Search by name or description..."
                 className="h-11 bg-background pl-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -230,18 +344,28 @@ export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
               />
             </div>
 
-            {/* Results count */}
-            {fetchState === 'idle' && groups.length > 0 && (
+            {/* Result count */}
+            {!isLoading && totalCount > 0 && (
               <p className="text-xs text-muted-foreground">
-                {debouncedQuery
-                  ? `${filteredGroups.length} of ${groups.length} groups`
-                  : `${groups.length} group${groups.length !== 1 ? 's' : ''} available`}
+                {debouncedQuery.trim()
+                  ? `${totalCount} group${totalCount !== 1 ? 's' : ''} match "${debouncedQuery}"`
+                  : `${totalCount} group${totalCount !== 1 ? 's' : ''} available`}
               </p>
             )}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {renderListContent()}
-            </div>
+            {/* Group cards */}
+            {renderListContent()}
+
+            {/* Pagination */}
+            <PaginationBar
+              page={page}
+              totalPages={totalPages}
+              hasPrev={hasPrev}
+              hasNext={hasNext}
+              isFetching={isFetching && !isLoading}
+              onPrev={() => setPage((p) => Math.max(1, p - 1))}
+              onNext={() => setPage((p) => p + 1)}
+            />
           </div>
         ) : (
           /* ── DETAIL VIEW ── */
@@ -263,6 +387,274 @@ export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
     </Dialog>
   );
 }
+
+// // src/components/modals/JoinGroupModal/JoinGroupModal.tsx
+
+// 'use client';
+
+// import { useState, useEffect, useCallback, useMemo } from 'react';
+// import { Search, Users, AlertCircle, Loader2 } from 'lucide-react';
+// import { Input } from '../../ui/input';
+// import { Alert, AlertDescription } from '../../ui/alert';
+// import {
+//   Dialog,
+//   DialogContent,
+//   DialogDescription,
+//   DialogHeader,
+//   DialogTitle,
+// } from '../../ui/dialog';
+// import { apiClient } from '@/src/lib/axios';
+// import { authService } from '@/src/services/auth.service';
+// import { AxiosError } from 'axios';
+// import { toast } from 'sonner';
+// import { useQuery } from '@tanstack/react-query';
+
+// import { JoinStep, Group, JoinGroupModalProps } from './types';
+// import { filterGroups, extractJoinErrorMessage } from './utils';
+// import { STALE_TIME_MS, SEARCH_DEBOUNCE_MS } from './constants';
+// import { GroupDetailView } from './Groupdetailview';
+// import { GroupCard } from './Groupcard';
+// import { useDebounce } from '@/src/hooks/useDebounce';
+
+// export function JoinGroupModal({ isOpen, onClose }: JoinGroupModalProps) {
+//   // ── Data ────────────────────────────────────────────────────────────────────
+//   const [groups, setGroups] = useState<Group[]>([]);
+//   const [searchQuery, setSearchQuery] = useState('');
+
+//   // ── UI ──────────────────────────────────────────────────────────────────────
+//   const [step, setStep] = useState<JoinStep>('list');
+//   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+//   const [fetchState, setFetchState] = useState<'idle' | 'loading' | 'error'>(
+//     'idle',
+//   );
+//   const [fetchError, setFetchError] = useState<string | null>(null);
+
+//   // ── Form (join request) ──────────────────────────────────────────────────────
+//   const [isJoining, setIsJoining] = useState(false);
+//   const [joinReason, setJoinReason] = useState('');
+//   const [termsAccepted, setTermsAccepted] = useState(false);
+
+//   // ── Debounced search query for filtering ─────────────────────────────────────
+//   const debouncedQuery = useDebounce(searchQuery, SEARCH_DEBOUNCE_MS);
+
+//   // ── User's current memberships ───────────────────────────────────────────────
+//   const { data: myJoinedData } = useQuery({
+//     queryKey: ['my-joined-groups'],
+//     queryFn: authService.getMyJoinedGroups,
+//     enabled: isOpen,
+//     staleTime: STALE_TIME_MS,
+//   });
+
+//   const userJoinedGroupIds = useMemo<Set<number>>(() => {
+//     const list: Group[] = myJoinedData?.results ?? myJoinedData ?? [];
+//     return new Set(list.map((g) => g.id));
+//   }, [myJoinedData]);
+
+//   // ── Derived selections ───────────────────────────────────────────────────────
+//   const selectedGroup = useMemo(
+//     () => groups.find((g) => g.id === selectedGroupId) ?? null,
+//     [groups, selectedGroupId],
+//   );
+
+//   const isAlreadyMember =
+//     selectedGroupId !== null && userJoinedGroupIds.has(selectedGroupId);
+
+//   /**
+//    * Client-side filtered list. Groups are fetched once on open;
+//    * filtering is done in-memory to avoid extra network round-trips.
+//    */
+//   const filteredGroups = useMemo(
+//     () => filterGroups(groups, debouncedQuery),
+//     [groups, debouncedQuery],
+//   );
+
+//   // ── Fetch groups once per open ───────────────────────────────────────────────
+//   const fetchGroups = useCallback(async () => {
+//     setFetchState('loading');
+//     setFetchError(null);
+//     try {
+//       const response = await apiClient.get('/accounts/groups/all/');
+//       setGroups(response.data.results ?? response.data);
+//       setFetchState('idle');
+//     } catch (err) {
+//       const axiosError = err as AxiosError<{ detail?: string }>;
+//       setFetchError(
+//         axiosError.response?.data?.detail ?? 'Failed to fetch savings groups.',
+//       );
+//       setFetchState('error');
+//     }
+//   }, []);
+
+//   // Fetch on open; reset state on close.
+//   useEffect(() => {
+//     if (isOpen) {
+//       fetchGroups();
+//     } else {
+//       // Reset everything so the modal starts fresh next time
+//       setStep('list');
+//       setSelectedGroupId(null);
+//       setSearchQuery('');
+//       setJoinReason('');
+//       setTermsAccepted(false);
+//     }
+//   }, [isOpen, fetchGroups]);
+
+//   // ── Handlers ─────────────────────────────────────────────────────────────────
+//   const handleSelectGroup = useCallback((groupId: number) => {
+//     setSelectedGroupId(groupId);
+//     setStep('detail');
+//   }, []);
+
+//   const handleBack = useCallback(() => {
+//     setStep('list');
+//     setJoinReason('');
+//     setTermsAccepted(false);
+//   }, []);
+
+//   const handleJoinRequest = useCallback(async () => {
+//     if (!selectedGroup || !termsAccepted) return;
+
+//     setIsJoining(true);
+//     try {
+//       const idempotencyKey = crypto.randomUUID();
+//       const response = await apiClient.post(
+//         `/accounts/groups/${selectedGroup.id}/request_join/`,
+//         { reason: joinReason },
+//         { headers: { 'X-Idempotency-Key': idempotencyKey } },
+//       );
+
+//       toast.success('Request Sent', {
+//         description:
+//           response.data.message ??
+//           'Your join request has been sent successfully!',
+//       });
+//       onClose();
+//     } catch (err) {
+//       const axiosError = err as AxiosError<{
+//         error?: string;
+//         detail?: string;
+//         message?: string;
+//       }>;
+//       toast.error('Join Request Failed', {
+//         description: extractJoinErrorMessage(axiosError),
+//       });
+//     } finally {
+//       setIsJoining(false);
+//     }
+//   }, [selectedGroup, termsAccepted, joinReason, onClose]);
+
+//   // ── Render helpers ────────────────────────────────────────────────────────────
+//   const renderListContent = () => {
+//     if (fetchState === 'loading') {
+//       return (
+//         <div className="flex flex-col items-center justify-center py-20">
+//           <Loader2 className="h-9 w-9 animate-spin text-primary" />
+//           <p className="mt-3 text-sm text-muted-foreground">
+//             Finding active circles...
+//           </p>
+//         </div>
+//       );
+//     }
+
+//     if (fetchState === 'error') {
+//       return (
+//         <Alert variant="destructive">
+//           <AlertCircle className="h-4 w-4" />
+//           <AlertDescription>{fetchError}</AlertDescription>
+//         </Alert>
+//       );
+//     }
+
+//     if (filteredGroups.length === 0) {
+//       const hasQuery = debouncedQuery.trim().length > 0;
+//       return (
+//         <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-muted/20 py-16 text-center">
+//           <Users className="mb-3 h-10 w-10 text-muted-foreground/50" />
+//           <p className="font-medium text-foreground">
+//             {hasQuery ? 'No groups match your search' : 'No public groups yet'}
+//           </p>
+//           <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+//             {hasQuery
+//               ? `No results for "${debouncedQuery}". Try a different name or frequency.`
+//               : 'Be the first to create a savings circle for your community.'}
+//           </p>
+//         </div>
+//       );
+//     }
+
+//     return filteredGroups.map((group) => (
+//       <GroupCard
+//         key={group.id}
+//         group={group}
+//         isJoined={userJoinedGroupIds.has(group.id)}
+//         onClick={() => handleSelectGroup(group.id)}
+//       />
+//     ));
+//   };
+
+//   // ── JSX ───────────────────────────────────────────────────────────────────────
+//   return (
+//     <Dialog open={isOpen} onOpenChange={onClose}>
+//       <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto no-scrollbar border-border bg-card">
+//         <DialogHeader>
+//           <DialogTitle className="text-xl font-bold text-foreground">
+//             {step === 'detail' ? 'Group Details' : 'Join a Savings Group'}
+//           </DialogTitle>
+//           <DialogDescription className="text-muted-foreground">
+//             {step === 'detail'
+//               ? 'Review group information before sending your request'
+//               : 'Browse and join public savings circles'}
+//           </DialogDescription>
+//         </DialogHeader>
+
+//         {step === 'list' ? (
+//           /* ── LIST VIEW ── */
+//           <div className="space-y-5 py-3">
+//             {/* Search input */}
+//             <div className="relative">
+//               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+//               <Input
+//                 placeholder="Search by name, admin, or frequency..."
+//                 className="h-11 bg-background pl-10"
+//                 value={searchQuery}
+//                 onChange={(e) => setSearchQuery(e.target.value)}
+//                 autoComplete="off"
+//               />
+//             </div>
+
+//             {/* Results count */}
+//             {fetchState === 'idle' && groups.length > 0 && (
+//               <p className="text-xs text-muted-foreground">
+//                 {debouncedQuery
+//                   ? `${filteredGroups.length} of ${groups.length} groups`
+//                   : `${groups.length} group${groups.length !== 1 ? 's' : ''} available`}
+//               </p>
+//             )}
+
+//             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+//               {renderListContent()}
+//             </div>
+//           </div>
+//         ) : (
+//           /* ── DETAIL VIEW ── */
+//           selectedGroup && (
+//             <GroupDetailView
+//               group={selectedGroup}
+//               isAlreadyMember={isAlreadyMember}
+//               isJoining={isJoining}
+//               joinReason={joinReason}
+//               termsAccepted={termsAccepted}
+//               onJoinReasonChange={setJoinReason}
+//               onTermsChange={setTermsAccepted}
+//               onBack={handleBack}
+//               onJoinRequest={handleJoinRequest}
+//             />
+//           )
+//         )}
+//       </DialogContent>
+//     </Dialog>
+//   );
+// }
 
 // // src/components/modals/JoinGroupModal.tsx
 
