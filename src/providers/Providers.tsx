@@ -1,5 +1,3 @@
-// src/providers/Providers.tsx
-
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -25,7 +23,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          {/* Add AxiosProvider here */}
           <AxiosProvider>{children}</AxiosProvider>
         </ThemeProvider>
       </QueryClientProvider>
