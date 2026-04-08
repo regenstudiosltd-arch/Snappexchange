@@ -12,6 +12,8 @@ declare module 'next-auth' {
     user: {
       id: string;
       email: string;
+      name: string;
+      image: string | null;
       accessToken: string;
       refreshToken: string;
       isVerified: boolean;
@@ -21,6 +23,8 @@ declare module 'next-auth' {
   interface User {
     id: string;
     email: string;
+    name: string;
+    image: string | null;
     accessToken: string;
     refreshToken: string;
     isVerified: boolean;
@@ -34,6 +38,8 @@ declare module 'next-auth/jwt' {
     refreshToken: string;
     isVerified: boolean;
     accessTokenExpires: number;
+    name: string;
+    image: string | null;
     error?: string;
   }
 }
@@ -99,10 +105,13 @@ export const authOptions: NextAuthOptions = {
           });
 
           const userProfile = meRes.data.user;
+          const profile = meRes.data.profile;
 
           return {
             id: userProfile.id,
             email: userProfile.email,
+            name: profile.full_name,
+            image: profile.profile_picture || null,
             isVerified: userProfile.is_verified,
             accessToken: access,
             refreshToken: refresh,
@@ -128,12 +137,14 @@ export const authOptions: NextAuthOptions = {
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
           isVerified: user.isVerified,
+          name: user.name,
+          image: user.image,
           accessTokenExpires:
             user.accessTokenExpires || getJwtExpiration(user.accessToken),
         };
       }
 
-      if (Date.now() < token.accessTokenExpires - 10000) {
+      if (Date.now() < token.accessTokenExpires - 60_000) {
         return token;
       }
 
@@ -144,6 +155,8 @@ export const authOptions: NextAuthOptions = {
         session.user.accessToken = token.accessToken;
         session.user.refreshToken = token.refreshToken;
         session.user.isVerified = token.isVerified;
+        session.user.name = token.name;
+        session.user.image = token.image;
         session.error = token.error;
       }
       return session;
