@@ -1,5 +1,3 @@
-// src/app/(dashboard)dashboard/page.tsx
-
 'use client';
 
 import { DashboardHomeEnhanced } from '@/src/components/pages/DashboardPageEnhanced';
@@ -23,6 +21,7 @@ export default function DashboardPage() {
         const target = routeMap[page] || '/dashboard';
         router.push(target);
       }}
+      onRefresh={() => router.refresh()}
     />
   );
 }
