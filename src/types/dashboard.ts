@@ -1,4 +1,5 @@
-// import type { LucideIcon } from 'lucide-react';
+// src/types/dashboard.ts
+
 import { type LucideIcon } from 'lucide-react';
 
 export interface JoinedGroup {
@@ -40,11 +41,8 @@ export interface ScheduledContributionsCache {
 
 export interface DashboardHomeEnhancedProps {
   onNavigate: (page: string, params?: Record<string, string>) => void;
+  onRefresh?: () => void;
 }
-
-// src/components/dashboard/sections/ScheduledContributionSection/types.ts
-
-// ─── Domain types ─────────────────────────────────────────────────────────────
 
 export type ContributionStatus =
   | 'completed'
@@ -79,8 +77,6 @@ export interface ScheduledContributionsProps {
   onNavigate?: (page: string, params?: Record<string, string>) => void;
 }
 
-// ─── Status config shape ──────────────────────────────────────────────────────
-
 export interface StatusConfig {
   label: string;
   icon: LucideIcon;
@@ -92,10 +88,6 @@ export interface StatusConfig {
   dotColor: string;
   pulse?: boolean;
 }
-
-// src/components/dashboard/sections/RecentActivitySection/types.ts
-
-// ─── Domain types ─────────────────────────────────────────────────────────────
 
 export type TxType =
   | 'contribution'
@@ -131,8 +123,6 @@ export interface ActivityResponse {
 export interface RecentActivityProps {
   onNavigate?: (page: string, params?: Record<string, string>) => void;
 }
-
-// ─── Tx config ────────────────────────────────────────────────────────────────
 
 export interface TxConfig {
   label: string;
