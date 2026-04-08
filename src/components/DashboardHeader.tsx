@@ -1,8 +1,6 @@
-// src/components/DashboardHeader.tsx
-
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Home,
@@ -17,12 +15,11 @@ import { Button } from './ui/button';
 import Image from 'next/image';
 import logoImage from '../assets/logo.png';
 import { useSession } from 'next-auth/react';
-import { apiClient } from '@/src/lib/axios';
 import { cn } from './ui/utils';
 import { NotificationPanel } from './notification/NotificationPanel';
 import { useNotifications } from '@/src/hooks/useNotifications';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+//  Types
 
 interface DashboardHeaderProps {
   currentPage: string;
@@ -30,29 +27,14 @@ interface DashboardHeaderProps {
   onLogout: () => void;
 }
 
-interface UserProfile {
-  fullName: string;
-  email: string;
-  profilePicture: string | null;
-  isVerified?: boolean;
-}
-
-// ─── Component ────────────────────────────────────────────────────────────────
+// Component
 
 export function DashboardHeader({
   currentPage,
   onNavigate,
   onLogout,
 }: DashboardHeaderProps) {
-  // const { data: session } = useSession();
   const { data: session, status } = useSession();
-
-  const [userProfile, setUserProfile] = useState<UserProfile>({
-    fullName: '',
-    email: session?.user?.email || '',
-    profilePicture: null,
-    isVerified: false,
-  });
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -76,36 +58,13 @@ export function DashboardHeader({
     refresh: refreshNotifications,
   } = useNotifications(status === 'authenticated');
 
-  // ── Fetch user profile ────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!session?.user?.accessToken) return;
-    apiClient
-      .get('/auth/me/')
-      .then(({ data }) => {
-        setUserProfile({
-          fullName: data.profile?.full_name || '',
-          email: data.user?.email || session.user?.email || '',
-          profilePicture: data.profile?.profile_picture || null,
-          isVerified: data.user?.is_verified ?? false,
-        });
-      })
-      .catch(() => {
-        setUserProfile((prev) => ({
-          ...prev,
-          email: session.user?.email || '',
-        }));
-      });
-  }, [session]);
-
-  // ── Close dropdowns on outside click ─────────────────────────────────────
+  //  Close profile dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      const target = e.target as Node;
-
       if (
         showProfile &&
         profileDropdownRef.current &&
-        !profileDropdownRef.current.contains(target)
+        !profileDropdownRef.current.contains(e.target as Node)
       ) {
         setShowProfile(false);
       }
@@ -114,14 +73,13 @@ export function DashboardHeader({
     return () => document.removeEventListener('mousedown', handler);
   }, [showProfile]);
 
-  // ── Derived display values ─────────────────────────────────────────────
-  const displayInitial = userProfile.fullName
-    ? userProfile.fullName.charAt(0).toUpperCase()
-    : userProfile.email
-      ? userProfile.email.charAt(0).toUpperCase()
-      : 'U';
+  const fullName = session?.user?.name || '';
+  const email = session?.user?.email || '';
+  const picture = session?.user?.image ?? null;
+  const isVerified = session?.user?.isVerified ?? false;
 
-  const displayName = userProfile.fullName || userProfile.email || 'User';
+  const displayName = fullName || email || 'User';
+  const displayInitial = displayName.charAt(0).toUpperCase();
 
   const handleNotifToggle = () => {
     setShowNotifications((prev) => !prev);
@@ -133,17 +91,14 @@ export function DashboardHeader({
     setShowNotifications(false);
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur-xl supports-backdrop-filter:bg-background/60">
-        {/* Subtle top accent line */}
         <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-primary/30 to-transparent" />
 
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
-            {/* ── Left: Navigation ─────────────────────────────────────── */}
+            {/* Left: Navigation */}
             <div className="flex items-center gap-1">
               {currentPage !== 'Dashboard' && (
                 <Button
@@ -172,7 +127,7 @@ export function DashboardHeader({
               </Button>
             </div>
 
-            {/* ── Center: Logo & Brand ──────────────────────────────────── */}
+            {/* ── Center: Logo & Brand  */}
             <button
               onClick={() => onNavigate('Dashboard')}
               className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
@@ -192,7 +147,7 @@ export function DashboardHeader({
               </div>
             </button>
 
-            {/* ── Right: Actions ────────────────────────────────────────── */}
+            {/*  Right: Actions  */}
             <div className="flex items-center gap-1">
               {/* Notification Bell */}
               <div className="relative">
@@ -211,8 +166,6 @@ export function DashboardHeader({
                   aria-haspopup="dialog"
                 >
                   <Bell className="h-4.5 w-4.5" />
-
-                  {/* Badge */}
                   <AnimatePresence>
                     {unreadCount > 0 && (
                       <motion.span
@@ -247,9 +200,9 @@ export function DashboardHeader({
                   aria-expanded={showProfile}
                   aria-haspopup="true"
                 >
-                  {userProfile.profilePicture ? (
+                  {picture ? (
                     <Image
-                      src={userProfile.profilePicture}
+                      src={picture}
                       alt={`${displayName}'s profile`}
                       width={36}
                       height={36}
@@ -278,7 +231,7 @@ export function DashboardHeader({
                         'absolute right-0 mt-2 w-68 z-50',
                         'rounded-2xl overflow-hidden',
                         'border border-border/50',
-                        'bg-card/95 backdrop-blur-2xl ',
+                        'bg-card/95 backdrop-blur-2xl',
                         'shadow-2xl shadow-black/25 dark:shadow-black/60',
                         'ring-1 ring-inset ring-white/10 dark:ring-white/5',
                       )}
@@ -286,9 +239,9 @@ export function DashboardHeader({
                       {/* Profile header */}
                       <div className="p-4 bg-linear-to-br from-primary/8 via-transparent to-transparent border-b border-border/40">
                         <div className="flex items-center gap-3">
-                          {userProfile.profilePicture ? (
+                          {picture ? (
                             <Image
-                              src={userProfile.profilePicture}
+                              src={picture}
                               alt="Profile"
                               width={44}
                               height={44}
@@ -302,14 +255,14 @@ export function DashboardHeader({
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
                               <p className="font-semibold text-foreground truncate text-sm leading-tight">
-                                {userProfile.fullName || 'User'}
+                                {fullName || 'User'}
                               </p>
-                              {userProfile.isVerified && (
+                              {isVerified && (
                                 <Shield className="h-3 w-3 text-primary shrink-0" />
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground truncate mt-0.5">
-                              {userProfile.email}
+                              {email}
                             </p>
                           </div>
                         </div>
@@ -370,7 +323,7 @@ export function DashboardHeader({
         </div>
       </header>
 
-      {/* ── Notification Panel ────────────────────────────────────────────── */}
+      {/*  Notification Panel  */}
       <AnimatePresence>
         {showNotifications && (
           <NotificationPanel
@@ -396,7 +349,7 @@ export function DashboardHeader({
   );
 }
 
-// ─── Sub-component ────────────────────────────────────────────────────────────
+//  Sub-component
 
 function ProfileMenuItem({
   icon: Icon,

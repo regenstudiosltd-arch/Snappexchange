@@ -551,18 +551,20 @@ export function GoalsPage() {
         open={!!errorDialog}
         onOpenChange={(open) => !open && setErrorDialog(null)}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <div className="flex items-center gap-2 text-destructive mb-2">
-              <AlertCircle className="h-5 w-5" />
-              <AlertDialogTitle>{errorDialog?.title}</AlertDialogTitle>
+        <AlertDialogContent className="max-w-sm text-center">
+          <AlertDialogHeader className="items-center">
+            <div className="w-13 h-13 rounded-full bg-red-50 dark:bg-red-950/40 flex items-center justify-center mb-1">
+              <AlertCircle className="h-6 w-6 text-red-700 dark:text-red-400" />
             </div>
+            <AlertDialogTitle>{errorDialog?.title}</AlertDialogTitle>
             <AlertDialogDescription>
               {errorDialog?.message}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction>Dismiss</AlertDialogAction>
+          <AlertDialogFooter className="sm:justify-center">
+            <AlertDialogAction onClick={() => setErrorDialog(null)}>
+              Dismiss
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

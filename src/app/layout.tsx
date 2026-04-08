@@ -1,5 +1,3 @@
-// src/app/layout.tsx
-
 import type { Metadata, Viewport } from 'next';
 import { Sora, Roboto } from 'next/font/google';
 import { Providers } from '@/src/providers/Providers';
@@ -19,13 +17,6 @@ const fontBody = Roboto({
   display: 'swap',
   weight: ['400', '500', '600', '700'],
 });
-
-// const = DM_SANS({
-//   variable: '--font-body',
-//   subsets: ['latin'],
-//   display: 'swap',
-//   weight: ['400', '500', '600', '700'],
-// });
 
 export const metadata: Metadata = {
   title: 'SnappX Web App',

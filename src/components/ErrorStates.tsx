@@ -188,8 +188,9 @@ export function GoalsPageError({ onRetry }: GoalsPageErrorProps) {
             We couldn&apos;t load your goals
           </h3>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            There was a problem on our end syncing your goals — not anything
-            you&apos;ve done. Your data is safe. Give it a moment and try again.
+            There was a problem on our end syncing your goals. You&apos;ve not
+            done anything. Your data is safe. Just give it a moment and try
+            again.
           </p>
         </div>
 
