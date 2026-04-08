@@ -11,6 +11,7 @@ import {
 } from '@/src/components/ui/card';
 import { Group } from './types';
 import { formatContribution, isGroupFull } from './utils';
+import { decodeHtmlEntities } from '@/src/lib/html';
 
 interface GroupCardProps {
   group: Group;
@@ -22,6 +23,11 @@ export function GroupCard({ group, isJoined, onClick }: GroupCardProps) {
   const full = isGroupFull(group);
   const fillPercent = Math.round(
     (group.current_members / group.expected_members) * 100,
+  );
+
+  const description = decodeHtmlEntities(
+    group.description ||
+      'Join this group to start your savings journey together.',
   );
 
   return (
@@ -72,8 +78,7 @@ export function GroupCard({ group, isJoined, onClick }: GroupCardProps) {
 
       <CardContent className="flex flex-1 flex-col gap-4">
         <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-          {group.description ||
-            'Join this group to start your savings journey together.'}
+          {description}
         </p>
 
         {/* Member progress bar */}
