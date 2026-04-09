@@ -1,5 +1,3 @@
-// src/components/auth/SignupEnhanced.tsx
-
 'use client';
 
 import { useState } from 'react';
@@ -24,6 +22,7 @@ import {
   EyeOff,
   Check,
   CheckCircle2,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
@@ -51,7 +50,6 @@ interface SignupEnhancedProps {
   onComplete: (phoneNumber: string) => void;
 }
 
-/* ─── Constants ─────────────────────────────────────────────────────────── */
 const PAYOUT_PROVIDERS = ['mtn', 'telecel', 'airteltigo'] as const;
 const USER_TYPES = ['student', 'worker'] as const;
 
@@ -62,7 +60,6 @@ const STEPS = [
   { number: 4, label: 'Security' },
 ] as const;
 
-/* ─── Password strength ─────────────────────────────────────────────────── */
 function PasswordStrengthBar({ password }: { password: string }) {
   const checks = [
     password.length >= 8,
@@ -105,7 +102,6 @@ function PasswordStrengthBar({ password }: { password: string }) {
   );
 }
 
-/* ─── Password field with show/hide ─────────────────────────────────────── */
 function PasswordField({
   id,
   label,
@@ -145,7 +141,6 @@ function PasswordField({
   );
 }
 
-/* ─── Step indicator ─────────────────────────────────────────────────────── */
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
     <div className="flex items-center mb-8">
@@ -158,7 +153,6 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
             key={step.number}
             className="flex items-center flex-1 last:flex-none"
           >
-            {/* Circle */}
             <div className="flex flex-col items-center gap-1">
               <div
                 className={cn(
@@ -194,7 +188,6 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
               </span>
             </div>
 
-            {/* Connector line */}
             {idx < STEPS.length - 1 && (
               <div
                 className="flex-1 mx-2 mb-3.5 sm:mb-5 h-px transition-all duration-500"
@@ -214,12 +207,10 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
   );
 }
 
-/* ─── Main component ─────────────────────────────────────────────────────── */
 export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
   const [step, setStep] = useState(1);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
-  const [isFetchingGPS, setIsFetchingGPS] = useState(false);
   const [animKey, setAnimKey] = useState(0);
 
   const {
@@ -235,7 +226,6 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
     defaultValues: { userType: 'student', momoProvider: 'mtn' },
   });
 
-  // const newPassword = watch('password', '');
   const newPassword = useWatch({ control, name: 'password', defaultValue: '' });
   const agreeToTerms = useWatch({
     control,
@@ -254,7 +244,6 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
 
   const isSubmitDisabled = signupMutation.isPending || !agreeToTerms;
 
-  /* ─── Handlers ── */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -278,15 +267,6 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
     setShowCamera(false);
   };
 
-  const handleFetchGPS = () => {
-    setIsFetchingGPS(true);
-    setTimeout(() => {
-      const mockGPS = `GA-${Math.floor(100 + Math.random() * 900)}-${Math.floor(1000 + Math.random() * 9000)}`;
-      setValue('ghanaPostAddress', mockGPS, { shouldValidate: true });
-      setIsFetchingGPS(false);
-    }, 1500);
-  };
-
   const goToStep = (next: number) => {
     setStep(next);
     setAnimKey((k) => k + 1);
@@ -304,11 +284,9 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
 
   const onSubmit = (data: SignupForm) => signupMutation.mutate(data);
 
-  /* ─── Render ── */
   return (
     <PageShell>
       <div className="flex flex-col items-center">
-        {/* Back link */}
         <Link
           href="/"
           className="group inline-flex items-center gap-1.5 mb-6 text-gray-400 dark:text-white/35 hover:text-gray-700 dark:hover:text-white/70 text-sm transition-colors duration-200 w-full max-w-lg"
@@ -317,7 +295,6 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
           Back to home
         </Link>
 
-        {/* Card */}
         <div
           className="w-full max-w-lg rounded-2xl border backdrop-blur-xl p-8 transition-colors duration-300
             bg-white/75 border-gray-200/70 shadow-[0_24px_80px_rgba(0,0,0,0.08)]
@@ -339,7 +316,6 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
 
           <AuthBrandMark />
 
-          {/* Heading */}
           <div className="mb-6">
             <h1 className="text-[22px] font-bold text-gray-900 dark:text-white tracking-tight leading-snug">
               Create your account
@@ -349,10 +325,8 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
             </p>
           </div>
 
-          {/* Step indicator */}
           <StepIndicator currentStep={step} />
 
-          {/* Global error */}
           {signupMutation.isError && (
             <div
               className="flex items-start gap-3 rounded-xl border px-4 py-3 text-[13px] mb-5
@@ -370,7 +344,6 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)}>
-            {/* ── Animated step content ── */}
             <div
               key={animKey}
               className="space-y-4"
@@ -379,7 +352,7 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
                   'stepContentIn 0.25s cubic-bezier(0.16,1,0.3,1) both',
               }}
             >
-              {/* ══ Step 1: Personal ══ */}
+              {/* Step 1: Personal */}
               {step === 1 && (
                 <>
                   <AuthInput
@@ -422,7 +395,7 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
                 </>
               )}
 
-              {/* ══ Step 2: Contact & Profile ══ */}
+              {/* Step 2: Contact & Profile */}
               {step === 2 && (
                 <>
                   <AuthInput
@@ -435,41 +408,40 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
                     {...register('momoNumber')}
                   />
 
+                  {/* Ghana Post GPS */}
                   <div className="space-y-2">
                     <AuthInput
                       id="ghanaPostAddress"
                       label="Digital Address (GhanaPost GPS)"
-                      placeholder="GH-XXX-XXXX"
+                      placeholder="e.g. GA-123-4567"
                       icon={MapPin}
                       error={errors.ghanaPostAddress?.message}
                       {...register('ghanaPostAddress')}
                     />
-                    <button
-                      type="button"
-                      onClick={handleFetchGPS}
-                      disabled={isFetchingGPS}
-                      className="w-full h-10 rounded-xl border text-[13px] font-medium flex items-center justify-center gap-2 transition-all duration-200
-                        border-gray-200 dark:border-white/8 text-gray-500 dark:text-white/40
-                        hover:border-amber-400/60 dark:hover:border-amber-500/30
-                        hover:text-amber-600 dark:hover:text-amber-400/80
-                        hover:bg-amber-50/40 dark:hover:bg-amber-500/6
-                        disabled:opacity-50 disabled:cursor-not-allowed"
+
+                    <div
+                      className="flex items-start gap-3 rounded-xl border px-3.5 py-3
+                        border-blue-100 bg-blue-50/60
+                        dark:border-blue-500/15 dark:bg-blue-500/6"
                     >
-                      {isFetchingGPS ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />{' '}
-                          Fetching GPS…
-                        </>
-                      ) : (
-                        <>
-                          <MapPin className="h-3.5 w-3.5" /> Auto-detect my GPS
-                          address
-                        </>
-                      )}
-                    </button>
+                      <p className="text-[12.5px] text-blue-600 dark:text-blue-400/80 leading-relaxed">
+                        Don&apos;t know your address?{' '}
+                        <a
+                          href="https://ghanapostgps.com/map"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold underline underline-offset-2 inline-flex items-center gap-1
+                            hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                        >
+                          Look it up on GhanaPostGPS
+                          <ExternalLink className="h-3 w-3" />
+                        </a>{' '}
+                        — it&apos;s free and takes about 30 seconds.
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Profile picture */}
+                  {/* Profile Picture */}
                   <div className="space-y-2">
                     <Label className="block text-gray-500 dark:text-white/45 text-[10.5px] font-bold uppercase tracking-[0.15em]">
                       Profile Picture
@@ -540,13 +512,10 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
                 </>
               )}
 
-              {/* ══ Step 3: Payout ══ */}
+              {/* Step 3: Payout */}
               {step === 3 && (
                 <>
-                  <div
-                    className="rounded-xl border p-4 mb-2
-                    border-blue-100 bg-blue-50/60 dark:border-blue-500/15 dark:bg-blue-500/6"
-                  >
+                  <div className="rounded-xl border p-4 mb-2 border-blue-100 bg-blue-50/60 dark:border-blue-500/15 dark:bg-blue-500/6">
                     <p className="text-[12.5px] text-blue-600 dark:text-blue-400/80 leading-relaxed">
                       Your payout details are used to send your earnings
                       directly to your mobile money wallet.
@@ -577,7 +546,7 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
                 </>
               )}
 
-              {/* ══ Step 4: Security ══ */}
+              {/* Step 4: Security */}
               {step === 4 && (
                 <>
                   <PasswordField
@@ -588,7 +557,6 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
                     {...register('password')}
                   />
 
-                  {/* Password strength & requirements */}
                   {newPassword && (
                     <div
                       className="rounded-xl border px-4 py-3 space-y-3
@@ -650,7 +618,6 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
                     {...register('confirmPassword')}
                   />
 
-                  {/* Terms */}
                   <div className="space-y-1.5 pt-1">
                     <div className="flex items-start gap-3">
                       <input
@@ -690,7 +657,7 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
               )}
             </div>
 
-            {/* ── Navigation buttons ── */}
+            {/* Navigation */}
             <div className="flex gap-3 mt-7 pt-6 border-t border-gray-100 dark:border-white/5">
               {step > 1 && (
                 <Button
@@ -748,7 +715,6 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
             </div>
           </form>
 
-          {/* Sign in link */}
           <p className="mt-5 text-center text-[13px]">
             <span className="text-gray-400 dark:text-white/28">
               Already have an account?{' '}

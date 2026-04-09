@@ -1,8 +1,6 @@
-// src/components/settings/Profilesection.tsx
-
 'use client';
 
-import { User, Mail, Phone, MapPin } from 'lucide-react';
+import { User, Mail, Phone, MapPin, ExternalLink } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import {
@@ -142,8 +140,8 @@ export function ProfileSection({
           </div>
         </div>
 
-        {/* GPS Address */}
-        <div className="space-y-1.5">
+        {/* Ghana Post GPS Address */}
+        <div className="space-y-2">
           <Label
             htmlFor="digitalAddress"
             className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
@@ -162,6 +160,28 @@ export function ProfileSection({
               onChange={(e) => set({ digitalAddress: e.target.value })}
               placeholder="e.g. AK-123-4567"
             />
+          </div>
+
+          <div
+            className="flex items-start gap-3 rounded-xl border px-3.5 py-3
+                       border-blue-100 bg-blue-50/60
+                       dark:border-blue-500/15 dark:bg-blue-500/6"
+          >
+            <MapPin className="h-4 w-4 text-blue-500 dark:text-blue-400/70 mt-0.5 shrink-0" />
+            <p className="text-[12.5px] text-blue-600 dark:text-blue-400/80 leading-relaxed">
+              In case you&apos;ve moved to a new place.{' '}
+              <a
+                href="https://ghanapostgps.com/map"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold underline underline-offset-2 inline-flex items-center gap-1
+                           hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+              >
+                Look it up on GhanaPostGPS
+                <ExternalLink className="h-3 w-3" />
+              </a>{' '}
+              — it&apos;s free and takes about 30 seconds.
+            </p>
           </div>
         </div>
       </SectionBody>
