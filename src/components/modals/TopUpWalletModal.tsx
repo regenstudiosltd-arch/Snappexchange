@@ -103,13 +103,13 @@ export function TopUpWalletModal({
     },
   });
 
-  useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY) {
-      console.error(
-        '🚨 NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY is missing in .env.local',
-      );
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY) {
+  //     console.error(
+  //       '🚨 NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY is missing in .env.local',
+  //     );
+  //   }
+  // }, []);
 
   // Auto-close 1.5 s after confirmed success, then fire onComplete so that
   // the parent's router.refresh() runs after the dialog is fully gone.
