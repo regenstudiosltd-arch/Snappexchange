@@ -37,11 +37,11 @@ export function Hero({ onNavigate }: HeroProps = {}) {
     };
   }, []);
 
-  const stats = [
-    { value: '10k+', label: 'Active Users', icon: Users },
-    { value: '500+', label: 'Savings Groups', icon: TrendingUp },
-    { value: '₵5M+', label: 'Saved', icon: Shield },
-  ];
+  // const stats = [
+  //   { value: '10k+', label: 'Active Users', icon: Users },
+  //   { value: '500+', label: 'Savings Groups', icon: TrendingUp },
+  //   { value: '₵5M+', label: 'Saved', icon: Shield },
+  // ];
 
   return (
     <>
@@ -96,14 +96,14 @@ export function Hero({ onNavigate }: HeroProps = {}) {
               <button className="btn-secondary">Learn More</button>
             </div>
 
-            <div className="hero-stats">
+            {/* <div className="hero-stats">
               {stats.map((stat) => (
                 <div className="stat-item" key={stat.label}>
                   <div className="stat-value">{stat.value}</div>
                   <div className="stat-label">{stat.label}</div>
                 </div>
               ))}
-            </div>
+            </div> */}
           </div>
 
           {/* Right Visual */}
