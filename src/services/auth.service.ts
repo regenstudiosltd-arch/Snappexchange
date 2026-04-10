@@ -6,6 +6,10 @@ import {
 } from '@/src/lib/schemas';
 import { getSession } from 'next-auth/react';
 
+const AI_MAX_MESSAGES = 30;
+const AI_MAX_CHARS_PER_MSG = 2000;
+const AI_MAX_TOTAL_CHARS = 12_000;
+
 export const authService = {
   signup: async (data: SignupForm) => {
     const idempotencyKey = crypto.randomUUID();
@@ -213,6 +217,29 @@ export const authService = {
     onChunk: (text: string) => void,
     signal?: AbortSignal,
   ): Promise<void> => {
+    // Client-side validation
+    if (messages.length > AI_MAX_MESSAGES) {
+      throw new Error(
+        `Conversation too long. Please start a new chat (max ${AI_MAX_MESSAGES} messages).`,
+      );
+    }
+
+    let totalChars = 0;
+    for (const msg of messages) {
+      if (msg.content.length > AI_MAX_CHARS_PER_MSG) {
+        throw new Error(
+          `Message too long. Please keep each message under ${AI_MAX_CHARS_PER_MSG} characters.`,
+        );
+      }
+      totalChars += msg.content.length;
+    }
+    if (totalChars > AI_MAX_TOTAL_CHARS) {
+      throw new Error(
+        'Conversation history too long. Please start a new chat.',
+      );
+    }
+
+    // Network request
     const session = await getSession();
     const token = session?.user?.accessToken;
 
@@ -229,9 +256,35 @@ export const authService = {
       },
     );
 
-    if (response.status === 401) throw new Error('auth');
-    if (!response.ok) throw new Error(`http_${response.status}`);
+    // HTTP-level errors
+    if (response.status === 401) {
+      throw new Error('auth');
+    }
 
+    if (response.status === 429) {
+      // Rate limited — user sent too many messages this hour
+      throw new Error('rate_limit');
+    }
+
+    if (response.status === 400) {
+      // Validation error — parse the body for the specific message
+      try {
+        const body = await response.json();
+        throw new Error(body.error || 'Invalid request to AI service.');
+      } catch {
+        throw new Error('Invalid request to AI service.');
+      }
+    }
+
+    if (response.status === 503) {
+      throw new Error('AI service is not available right now.');
+    }
+
+    if (!response.ok) {
+      throw new Error(`http_${response.status}`);
+    }
+
+    // Stream reading
     const reader = response.body!.getReader();
     const decoder = new TextDecoder();
 
@@ -244,15 +297,26 @@ export const authService = {
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
         const raw = line.slice(6);
+
         if (raw.trim() === '[DONE]') return;
+
         if (raw.trim().startsWith('[ERROR]')) {
-          throw new Error(
-            raw.trim().replace('[ERROR]', '').trim() || 'AI service error',
-          );
+          const errorText = raw.trim().replace('[ERROR]', '').trim();
+
+          // Map backend error strings to user-friendly messages
+          if (errorText.toLowerCase().includes('rate limit')) {
+            throw new Error('rate_limit');
+          }
+          if (errorText.toLowerCase().includes('authentication')) {
+            throw new Error('auth');
+          }
+          throw new Error(errorText || 'AI service error');
         }
+
         try {
           onChunk(JSON.parse(raw));
         } catch {
+          // Raw text chunk (non-JSON) — pass through directly
           onChunk(raw);
         }
       }
