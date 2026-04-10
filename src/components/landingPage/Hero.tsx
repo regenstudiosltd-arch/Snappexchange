@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Sparkles, TrendingUp, Shield, Users } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface HeroProps {
   onNavigate?: (view: string) => void;
@@ -93,7 +94,9 @@ export function Hero({ onNavigate }: HeroProps = {}) {
                 Get Started
                 <ArrowRight size={18} className="arrow-icon" />
               </button>
-              <button className="btn-secondary">Learn More</button>
+              <Link href="/terms" className="btn-secondary">
+                Learn More
+              </Link>
             </div>
 
             {/* <div className="hero-stats">
