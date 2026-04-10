@@ -13,7 +13,7 @@ export function Footer() {
     setYear(new Date().getFullYear());
   }, []);
 
-  const navLinks = ['Services', 'How It Works', 'About Us', 'Testimonials'];
+  const navLinks = ['Services', 'How It Works', 'About', 'Testimonials'];
 
   const legalLinks = [
     { label: 'Privacy Policy', href: '/privacy' },
