@@ -6,7 +6,7 @@ export const apiClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-//  Queue for requests that arrive while a refresh is in flight
+// Queue for requests that arrive while a refresh is in flight
 let isRefreshing = false;
 let queue: Array<{
   resolve: (token: string) => void;
@@ -20,7 +20,7 @@ function flushQueue(error: unknown, token: string | null) {
   queue = [];
 }
 
-//  Request interceptor: attach token on every request
+// Request interceptor: attach token on every request
 apiClient.interceptors.request.use(async (config) => {
   const { getSession } = await import('next-auth/react');
   const session = await getSession();
@@ -30,17 +30,19 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
-//  Response interceptor: retry once after a queued refresh
+// Response interceptor
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const original: InternalAxiosRequestConfig & { _retry?: boolean } =
       error.config;
 
-    if (error.response?.status !== 401 || original._retry) {
+    const status = error.response?.status;
+    if (status !== 401 || original._retry) {
       return Promise.reject(error);
     }
 
+    // 401 handling: try to get a fresh token once
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         queue.push({ resolve, reject });
@@ -55,7 +57,6 @@ apiClient.interceptors.response.use(
 
     try {
       const { getSession } = await import('next-auth/react');
-
       const freshSession = await getSession();
 
       if (!freshSession?.user?.accessToken || freshSession.error) {
