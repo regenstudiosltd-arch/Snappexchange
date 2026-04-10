@@ -8,6 +8,7 @@ import {
   ArrowRight,
   ChevronLeft,
   Shield,
+  Lock,
 } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { authService } from '@/src/services/auth.service';
@@ -18,6 +19,49 @@ import Link from 'next/link';
 interface OTPVerificationProps {
   phoneNumber: string;
   onVerifySuccess: (code: string) => void;
+}
+
+//  Helpers
+function extractErrorMessage(error: unknown): string {
+  if (!error) return 'Something went wrong. Please try again.';
+
+  const err = error as {
+    response?: {
+      status?: number;
+      data?: { error?: string; detail?: string };
+    };
+    message?: string;
+  };
+
+  const status = err.response?.status;
+  const data = err.response?.data;
+
+  // Lockout — HTTP 429
+  if (status === 429) {
+    // Our custom lockout message from otp_lockout.py
+    if (data?.error) return data.error;
+    // django-ratelimit throttle message
+    if (data?.detail)
+      return 'Too many attempts. Please wait a few minutes and try again.';
+    return 'Too many failed attempts. Please wait 1 hour before trying again.';
+  }
+
+  // Backend validation errors
+  if (data?.error) return data.error;
+  if (data?.detail) return data.detail;
+
+  // Network / unknown
+  if (err.message) return err.message;
+  return 'Something went wrong. Please try again.';
+}
+
+/**
+ * Returns true when the error represents a hard lockout (HTTP 429).
+ * Used to show a different, more prominent UI state.
+ */
+function isLockoutError(error: unknown): boolean {
+  const err = error as { response?: { status?: number } } | undefined;
+  return err?.response?.status === 429;
 }
 
 export function OTPVerification({
@@ -39,9 +83,12 @@ export function OTPVerification({
     mutationFn: () => authService.resendOtp(phoneNumber),
     onSuccess: () => {
       setResendTimer(60);
+      // Clear any previous verify errors when user gets a fresh OTP
+      verifyMutation.reset();
     },
   });
 
+  // ── Resend countdown
   useEffect(() => {
     if (resendTimer > 0) {
       const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
@@ -49,16 +96,20 @@ export function OTPVerification({
     }
   }, [resendTimer]);
 
+  // ── OTP input handlers
   const handleChange = (index: number, value: string) => {
+    // Only allow single digits
     if (value.length <= 1 && /^\d*$/.test(value)) {
       const newOtp = [...otp];
       newOtp[index] = value;
       setOtp(newOtp);
 
+      // Auto-advance focus
       if (value && index < 5) {
         inputRefs.current[index + 1]?.focus();
       }
 
+      // Auto-submit when all 6 digits filled
       if (newOtp.every((digit) => digit !== '') && index === 5) {
         verifyMutation.mutate({
           phone_number: phoneNumber,
@@ -96,7 +147,18 @@ export function OTPVerification({
     }
   };
 
+  // ── Derived state ─────────────────────────────────────────────────────────
   const isComplete = otp.every((d) => d !== '');
+  const isLockedOut =
+    verifyMutation.isError && isLockoutError(verifyMutation.error);
+  const errorMessage = verifyMutation.isError
+    ? extractErrorMessage(verifyMutation.error)
+    : resendMutation.isError
+      ? extractErrorMessage(resendMutation.error)
+      : null;
+
+  // When locked out, disable the inputs and verify button entirely
+  const isDisabled = verifyMutation.isPending || isLockedOut;
 
   return (
     <PageShell>
@@ -134,40 +196,56 @@ export function OTPVerification({
               <div
                 className="flex h-9 w-9 items-center justify-center rounded-xl shrink-0"
                 style={{
-                  background:
-                    'linear-gradient(135deg, rgba(220,38,38,0.12) 0%, rgba(245,158,11,0.12) 100%)',
+                  background: isLockedOut
+                    ? 'rgba(239,68,68,0.12)'
+                    : 'linear-gradient(135deg, rgba(220,38,38,0.12) 0%, rgba(245,158,11,0.12) 100%)',
                 }}
               >
-                <Shield className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400" />
+                {isLockedOut ? (
+                  <Lock className="h-4 w-4 text-red-500 dark:text-red-400" />
+                ) : (
+                  <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                )}
               </div>
               <h1 className="text-[22px] font-bold text-gray-900 dark:text-white tracking-tight leading-snug">
-                Verify your phone
+                {isLockedOut
+                  ? 'Account temporarily locked'
+                  : 'Verify your phone'}
               </h1>
             </div>
             <p className="text-[13.5px] text-gray-400 dark:text-white/40 leading-relaxed">
-              We sent a 6-digit code to{' '}
-              <span className="text-gray-700 dark:text-white/70 font-medium">
-                {phoneNumber || '...'}
-              </span>
+              {isLockedOut ? (
+                'Too many incorrect attempts. Please wait before trying again.'
+              ) : (
+                <>
+                  We sent a 6-digit code to{' '}
+                  <span className="text-gray-700 dark:text-white/70 font-medium">
+                    {phoneNumber || '...'}
+                  </span>
+                </>
+              )}
             </p>
           </div>
 
           <div className="space-y-5">
-            {/* ── Error banner ── */}
-            {(verifyMutation.isError || resendMutation.isError) && (
+            {/* ── Error / lockout banner ── */}
+            {errorMessage && (
               <div
-                className="flex items-start gap-3 rounded-xl border px-4 py-3 text-[13px]
-                  border-red-200 bg-red-50/80 text-red-600
-                  dark:border-red-500/20 dark:bg-red-500/8 dark:text-red-400"
+                className={cn(
+                  'flex items-start gap-3 rounded-xl border px-4 py-3 text-[13px]',
+                  isLockedOut
+                    ? // Hard lockout — more prominent red styling
+                      'border-red-300 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/12 dark:text-red-300'
+                    : // Regular error
+                      'border-red-200 bg-red-50/80 text-red-600 dark:border-red-500/20 dark:bg-red-500/8 dark:text-red-400',
+                )}
               >
-                <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                {(
-                  verifyMutation.error as {
-                    response?: { data?: { error?: string } };
-                  }
-                )?.response?.data?.error ||
-                  resendMutation.error?.message ||
-                  'An error occurred. Please try again.'}
+                {isLockedOut ? (
+                  <Lock className="h-4 w-4 mt-0.5 shrink-0" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                )}
+                <span>{errorMessage}</span>
               </div>
             )}
 
@@ -182,43 +260,43 @@ export function OTPVerification({
               </div>
             )}
 
-            {/* ── OTP label ── */}
-            <div>
-              <p className="block text-gray-500 dark:text-white/45 text-[10.5px] font-bold uppercase tracking-[0.15em] mb-3">
-                Enter 6-digit code
-              </p>
+            {/* ── OTP inputs — hidden when locked out ── */}
+            {!isLockedOut && (
+              <div>
+                <p className="block text-gray-500 dark:text-white/45 text-[10.5px] font-bold uppercase tracking-[0.15em] mb-3">
+                  Enter 6-digit code
+                </p>
 
-              {/* ── OTP Inputs ── */}
-              <div className="flex justify-between gap-2">
-                {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(el) => {
-                      inputRefs.current[index] = el;
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
-                    onPaste={index === 0 ? handlePaste : undefined}
-                    disabled={verifyMutation.isPending}
-                    className={cn(
-                      'w-full h-14 text-center text-xl font-bold rounded-xl border-2 transition-all duration-200',
-                      'bg-white/70 dark:bg-white/4',
-                      'text-gray-900 dark:text-white',
-                      'focus:outline-none',
-                      digit
-                        ? 'border-amber-400/80 dark:border-amber-500/50 shadow-[0_0_0_3px_rgba(245,158,11,0.12)] dark:shadow-[0_0_0_3px_rgba(245,158,11,0.08)]'
-                        : 'border-gray-200/80 dark:border-white/8 hover:border-gray-300/80 dark:hover:border-white/[0.14] focus:border-amber-400/80 dark:focus:border-amber-500/50 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.12)]',
-                      verifyMutation.isPending &&
-                        'opacity-60 cursor-not-allowed',
-                    )}
-                  />
-                ))}
+                <div className="flex justify-between gap-2">
+                  {otp.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => {
+                        inputRefs.current[index] = el;
+                      }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleChange(index, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(index, e)}
+                      onPaste={index === 0 ? handlePaste : undefined}
+                      disabled={isDisabled}
+                      className={cn(
+                        'w-full h-14 text-center text-xl font-bold rounded-xl border-2 transition-all duration-200',
+                        'bg-white/70 dark:bg-white/4',
+                        'text-gray-900 dark:text-white',
+                        'focus:outline-none',
+                        digit
+                          ? 'border-amber-400/80 dark:border-amber-500/50 shadow-[0_0_0_3px_rgba(245,158,11,0.12)] dark:shadow-[0_0_0_3px_rgba(245,158,11,0.08)]'
+                          : 'border-gray-200/80 dark:border-white/8 hover:border-gray-300/80 dark:hover:border-white/[0.14] focus:border-amber-400/80 dark:focus:border-amber-500/50 focus:shadow-[0_0_0_3px_rgba(245,158,11,0.12)]',
+                        isDisabled && 'opacity-50 cursor-not-allowed',
+                      )}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* ── Verifying indicator ── */}
             {verifyMutation.isPending && (
@@ -228,36 +306,51 @@ export function OTPVerification({
               </div>
             )}
 
-            {/* ── Verify button ── */}
-            <Button
-              onClick={() =>
-                verifyMutation.mutate({
-                  phone_number: phoneNumber,
-                  code: otp.join(''),
-                })
-              }
-              disabled={!isComplete || verifyMutation.isPending}
-              className="w-full h-12 rounded-xl font-semibold text-white border-0 transition-all duration-200 hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{
-                background: 'linear-gradient(135deg, #DC2626 0%, #F59E0B 100%)',
-              }}
-            >
-              {verifyMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Verifying…
-                </>
-              ) : (
-                <>
-                  Verify & Continue
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              )}
-            </Button>
+            {/* ── Verify button — hidden when locked out ── */}
+            {!isLockedOut && (
+              <Button
+                onClick={() =>
+                  verifyMutation.mutate({
+                    phone_number: phoneNumber,
+                    code: otp.join(''),
+                  })
+                }
+                disabled={!isComplete || isDisabled}
+                className="w-full h-12 rounded-xl font-semibold text-white border-0 transition-all duration-200 hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  background:
+                    'linear-gradient(135deg, #DC2626 0%, #F59E0B 100%)',
+                }}
+              >
+                {verifyMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Verifying…
+                  </>
+                ) : (
+                  <>
+                    Verify & Continue
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            )}
 
-            {/* ── Resend ── */}
+            {/* ── Resend section ── */}
             <div className="pt-4 border-t border-gray-100 dark:border-white/5 text-center text-[13px]">
-              {resendTimer > 0 ? (
+              {isLockedOut ? (
+                // When locked out, tell user to try again later
+                // Don't offer resend — the backend will reject it too
+                <span className="text-gray-400 dark:text-white/28">
+                  Please wait 1 hour, then{' '}
+                  <Link
+                    href="/login"
+                    className="text-amber-600 dark:text-amber-500/80 hover:text-amber-700 dark:hover:text-amber-300 font-semibold transition-colors"
+                  >
+                    return to login
+                  </Link>
+                </span>
+              ) : resendTimer > 0 ? (
                 <span className="text-gray-400 dark:text-white/28">
                   Resend code in{' '}
                   <span className="text-amber-600 dark:text-amber-500/80 font-semibold tabular-nums">
