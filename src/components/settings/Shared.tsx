@@ -1,8 +1,6 @@
-// src/components/settings/Shared.tsx
-
 'use client';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// Constants
 
 export const PROFILE_STALE_TIME_MS = 5 * 60 * 1000;
 export const FEEDBACK_CLEAR_DELAY_MS = 3500;
@@ -37,7 +35,7 @@ export const LS_KEY_NOTIFICATIONS = 'snappx_notifications';
 export const LS_KEY_SECURITY = 'snappx_security';
 export const LS_KEY_APPEARANCE = 'snappx_appearance';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// Types
 
 export type MomoProvider = 'mtn' | 'telecel' | 'airteltigo';
 export type UserType = 'Student' | 'Worker';
@@ -52,7 +50,6 @@ export interface Feedback {
 export interface ProfileFormState {
   fullName: string;
   email: string;
-  phoneNumber: string;
   digitalAddress: string;
   userType: UserType;
 }
@@ -82,7 +79,7 @@ export interface AppearanceSettings {
   language: string;
 }
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// Utilities
 
 export function extractApiError(err: unknown, fallback: string): string {
   const typed = err as { response?: { data?: { error?: string } } } | undefined;
@@ -115,7 +112,7 @@ export function validatePasswordChange(
   return null;
 }
 
-// ─── Default state factories ──────────────────────────────────────────────────
+// Default state factories
 
 export function defaultNotifications(): NotificationSettings {
   return {
@@ -140,7 +137,7 @@ export function defaultAppearance(): AppearanceSettings {
   return { language: 'en' };
 }
 
-// ─── Shared UI Components ─────────────────────────────────────────────────────
+// Shared UI Components
 
 import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -288,7 +285,7 @@ export function FeedbackBanner({ feedback }: FeedbackBannerProps) {
   );
 }
 
-// ─── Section Shell ────────────────────────────────────────────────────────────
+// Section Shell
 
 interface SectionShellProps {
   id: string;
