@@ -1,5 +1,3 @@
-// next.config.ts
-
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
@@ -12,6 +10,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'images.pexels.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media.istockphoto.com',
       },
       {
         protocol: 'https',
