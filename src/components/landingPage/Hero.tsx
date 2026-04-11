@@ -117,7 +117,10 @@ export function Hero({ onNavigate }: HeroProps = {}) {
 
               <div className="hero-img-container">
                 <Image
-                  src="https://images.unsplash.com/photo-1655720360377-b97f6715e1ae?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhZnJpY2FuJTIwY29tbXVuaXR5JTIwc2F2aW5nc3xlbnwxfHx8fDE3NjQwMDA4MDd8MA&ixlib=rb-4.1.0&q=80&w=1080"
+                  // img 1
+                  src="https://media.istockphoto.com/id/2195380850/photo/black-hand-holding-various-denorminations-of-ghanaian-cedi-notes-isolated-on-green-background.jpg?s=612x612&w=0&k=20&c=GRE8XHr5iZ8MNNmGooZp6WXtfFbfmdL-lQvVyJ03SsE="
+                  // img 2
+                  // src="https://media.istockphoto.com/id/1369041786/photo/black-hands-holding-3d-rendered-200-ghanaian-cedi-notes-closeup-of-hands-holding-ghanaian.jpg?s=612x612&w=0&k=20&c=D2PlCC625Xdskqis9vve5XyPbm_vLDUvC3Ga7SRF4y0="
                   alt="Community savings"
                   width={600}
                   height={600}
@@ -131,7 +134,7 @@ export function Hero({ onNavigate }: HeroProps = {}) {
               <div className="float-card float-card-1">
                 <div className="card-label">Emergency Fund</div>
                 <div className="card-row">
-                  <div className="card-avatar">AF</div>
+                  <div className="card-avatar">PK</div>
                   <div>
                     <div className="card-value">₵3,200</div>
                     <div className="card-sub">of ₵5,000 goal</div>
@@ -149,7 +152,7 @@ export function Hero({ onNavigate }: HeroProps = {}) {
                   <div>
                     <div className="card-label">Payout Ready</div>
                     <div className="card-value" style={{ fontSize: '1rem' }}>
-                      ₵1,500.00
+                      ₵4,500.00
                     </div>
                   </div>
                 </div>
@@ -159,7 +162,7 @@ export function Hero({ onNavigate }: HeroProps = {}) {
               <div className="float-card float-card-3 float-card-3-anim">
                 <div className="card-label">Group Members</div>
                 <div style={{ display: 'flex', gap: '-8px' }}>
-                  {['KA', 'MB', 'AO', '+7'].map((init, i) => (
+                  {['KW', 'MB', 'EA', '+7'].map((init, i) => (
                     <div
                       key={i}
                       className="card-avatar"
