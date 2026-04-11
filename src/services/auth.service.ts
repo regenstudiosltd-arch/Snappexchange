@@ -1,8 +1,12 @@
+// src/services/auth.service.ts
+
 import { apiClient } from '@/src/lib/axios';
 import {
   SignupForm,
   UserProfile,
   ProfileUpdatePayload,
+  MomoOtpRequiredResponse,
+  ProfileUpdateSuccessResponse,
 } from '@/src/lib/schemas';
 import { getSession } from 'next-auth/react';
 
@@ -29,9 +33,7 @@ export const authService = {
     }
 
     const response = await apiClient.post('/auth/signup/', formData, {
-      headers: {
-        'X-Idempotency-Key': idempotencyKey,
-      },
+      headers: { 'X-Idempotency-Key': idempotencyKey },
     });
     return response.data;
   },
@@ -77,17 +79,24 @@ export const authService = {
     };
   },
 
-  updateProfile: async (payload: ProfileUpdatePayload) => {
+  updateProfile: async (
+    payload: ProfileUpdatePayload,
+  ): Promise<MomoOtpRequiredResponse | UserProfile> => {
     const idempotencyKey = crypto.randomUUID();
 
     const response = await apiClient.patch('/accounts/profile/', payload, {
-      headers: {
-        'X-Idempotency-Key': idempotencyKey,
-      },
+      headers: { 'X-Idempotency-Key': idempotencyKey },
     });
 
-    const { user, profile } = response.data;
+    const data = response.data as
+      | ProfileUpdateSuccessResponse
+      | MomoOtpRequiredResponse;
 
+    if ('next_step' in data && data.next_step === 'verify_momo_change') {
+      return data as MomoOtpRequiredResponse;
+    }
+
+    const { user, profile } = data as ProfileUpdateSuccessResponse;
     return {
       id: user.id,
       email: user.email,
@@ -159,9 +168,7 @@ export const authService = {
   }) => {
     const idempotencyKey = crypto.randomUUID();
     const response = await apiClient.post('/auth/change-password/', payload, {
-      headers: {
-        'X-Idempotency-Key': idempotencyKey,
-      },
+      headers: { 'X-Idempotency-Key': idempotencyKey },
     });
     return response.data;
   },
@@ -176,9 +183,7 @@ export const authService = {
     const response = await apiClient.post(
       `/accounts/groups/${groupId}/contribute/`,
       {},
-      {
-        headers: { 'X-Idempotency-Key': idempotencyKey },
-      },
+      { headers: { 'X-Idempotency-Key': idempotencyKey } },
     );
     return response.data;
   },
@@ -205,9 +210,7 @@ export const authService = {
         password: payload.password,
         password2: payload.confirmPassword,
       },
-      {
-        headers: { 'X-Idempotency-Key': idempotencyKey },
-      },
+      { headers: { 'X-Idempotency-Key': idempotencyKey } },
     );
     return response.data;
   },
@@ -217,7 +220,6 @@ export const authService = {
     onChunk: (text: string) => void,
     signal?: AbortSignal,
   ): Promise<void> => {
-    // Client-side validation
     if (messages.length > AI_MAX_MESSAGES) {
       throw new Error(
         `Conversation too long. Please start a new chat (max ${AI_MAX_MESSAGES} messages).`,
@@ -239,7 +241,6 @@ export const authService = {
       );
     }
 
-    // Network request
     const session = await getSession();
     const token = session?.user?.accessToken;
 
@@ -256,18 +257,9 @@ export const authService = {
       },
     );
 
-    // HTTP-level errors
-    if (response.status === 401) {
-      throw new Error('auth');
-    }
-
-    if (response.status === 429) {
-      // Rate limited — user sent too many messages this hour
-      throw new Error('rate_limit');
-    }
-
+    if (response.status === 401) throw new Error('auth');
+    if (response.status === 429) throw new Error('rate_limit');
     if (response.status === 400) {
-      // Validation error — parse the body for the specific message
       try {
         const body = await response.json();
         throw new Error(body.error || 'Invalid request to AI service.');
@@ -275,16 +267,10 @@ export const authService = {
         throw new Error('Invalid request to AI service.');
       }
     }
-
-    if (response.status === 503) {
+    if (response.status === 503)
       throw new Error('AI service is not available right now.');
-    }
+    if (!response.ok) throw new Error(`http_${response.status}`);
 
-    if (!response.ok) {
-      throw new Error(`http_${response.status}`);
-    }
-
-    // Stream reading
     const reader = response.body!.getReader();
     const decoder = new TextDecoder();
 
@@ -293,30 +279,21 @@ export const authService = {
       if (done) break;
 
       const lines = decoder.decode(value, { stream: true }).split('\n');
-
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
         const raw = line.slice(6);
-
         if (raw.trim() === '[DONE]') return;
-
         if (raw.trim().startsWith('[ERROR]')) {
           const errorText = raw.trim().replace('[ERROR]', '').trim();
-
-          // Map backend error strings to user-friendly messages
-          if (errorText.toLowerCase().includes('rate limit')) {
+          if (errorText.toLowerCase().includes('rate limit'))
             throw new Error('rate_limit');
-          }
-          if (errorText.toLowerCase().includes('authentication')) {
+          if (errorText.toLowerCase().includes('authentication'))
             throw new Error('auth');
-          }
           throw new Error(errorText || 'AI service error');
         }
-
         try {
           onChunk(JSON.parse(raw));
         } catch {
-          // Raw text chunk (non-JSON) — pass through directly
           onChunk(raw);
         }
       }
@@ -336,7 +313,6 @@ export const authService = {
   },
 
   getInvitePreview: async (token: string) => {
-    // Public endpoint — no auth header needed
     const response = await apiClient.get(`/accounts/invite/${token}/`);
     return response.data;
   },
