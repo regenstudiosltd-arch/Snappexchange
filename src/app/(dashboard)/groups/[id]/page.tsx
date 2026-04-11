@@ -1,4 +1,4 @@
-import { GroupDetailPage } from '@/src/components/pages/GroupDetailPage';
+import { GroupDetailPage } from '@/src/components/pages/GroupDetailPage/GroupDetailPage';
 
 export default async function Page({
   params,
