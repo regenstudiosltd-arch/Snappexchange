@@ -1,6 +1,6 @@
 'use client';
 
-import { User, Mail, Phone, MapPin, ExternalLink } from 'lucide-react';
+import { User, Mail, MapPin, ExternalLink } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import {
@@ -46,7 +46,7 @@ export function ProfileSection({
       />
 
       <SectionBody>
-        {/* Name + Type row */}
+        {/* Full Name + Account Type */}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label
@@ -112,30 +112,6 @@ export function ProfileSection({
               value={profileSettings.email}
               onChange={(e) => set({ email: e.target.value })}
               placeholder="you@example.com"
-            />
-          </div>
-        </div>
-
-        {/* Phone */}
-        <div className="space-y-1.5">
-          <Label
-            htmlFor="phone"
-            className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
-          >
-            Phone Number
-          </Label>
-          <div className="relative">
-            <Phone
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60"
-              aria-hidden
-            />
-            <Input
-              id="phone"
-              type="tel"
-              className="h-10 pl-9 rounded-lg border-border/70 bg-background/60 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/30 transition-all text-sm"
-              value={profileSettings.phoneNumber}
-              onChange={(e) => set({ phoneNumber: e.target.value })}
-              placeholder="+233 XX XXX XXXX"
             />
           </div>
         </div>
