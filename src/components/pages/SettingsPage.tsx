@@ -49,7 +49,7 @@ import {
 
 import { useFeedback } from '@/src/hooks/useSettings';
 
-// ── Dynamic imports — below-fold sections ──────────────────────────────────────
+// Dynamic imports
 const SectionPlaceholder = () => (
   <div className="rounded-2xl border border-border/60 bg-card/80 overflow-hidden animate-pulse">
     <div className="px-6 py-5 border-b border-border/60 flex items-start gap-4">
@@ -105,13 +105,13 @@ const PasswordSuccessModal = dynamic(() =>
   })),
 );
 
+//  Error state
 function SettingsErrorState({ onRetry }: { onRetry: () => void }) {
   const router = useRouter();
   const [isRetrying, setIsRetrying] = useState(false);
 
   const handleRetry = () => {
     setIsRetrying(true);
-    // Small delay so the spinner is visible before the page reloads
     setTimeout(() => onRetry(), 600);
   };
 
@@ -121,15 +121,12 @@ function SettingsErrorState({ onRetry }: { onRetry: () => void }) {
       className="flex items-center justify-center min-h-min-h-105 px-4"
     >
       <div className="w-full max-w-sm bg-card border border-border/60 rounded-2xl p-10 flex flex-col items-center text-center shadow-sm animate-in fade-in slide-in-from-bottom-3 duration-300">
-        {/* Icon with pulsing ring */}
         <div className="relative w-16 h-16 flex items-center justify-center mb-6">
           <span className="absolute inset-0 rounded-full bg-destructive/10 animate-ping opacity-20" />
           <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-destructive/10">
             <AlertCircle className="h-7 w-7 text-destructive" aria-hidden />
           </div>
         </div>
-
-        {/* Copy */}
         <h2 className="text-base font-semibold text-foreground mb-2 tracking-tight">
           Couldn&apos;t load your profile
         </h2>
@@ -137,8 +134,6 @@ function SettingsErrorState({ onRetry }: { onRetry: () => void }) {
           There was a problem fetching your settings. This is usually temporary.
           Try again or go back.
         </p>
-
-        {/* Actions */}
         <div className="flex flex-col gap-2.5 w-full">
           <button
             onClick={handleRetry}
@@ -160,7 +155,6 @@ function SettingsErrorState({ onRetry }: { onRetry: () => void }) {
               </>
             )}
           </button>
-
           <div className="flex items-center gap-3 my-0.5">
             <span className="flex-1 h-px bg-border/50" />
             <span className="text-[10px] text-muted-foreground/50 uppercase tracking-widest">
@@ -168,19 +162,16 @@ function SettingsErrorState({ onRetry }: { onRetry: () => void }) {
             </span>
             <span className="flex-1 h-px bg-border/50" />
           </div>
-
           <button
             onClick={() => router.back()}
             className="flex items-center justify-center gap-2 w-full h-10 px-4 rounded-xl
                        bg-transparent hover:bg-muted/60 border border-border/60
-                       text-muted-foreground text-sm
-                       transition-all"
+                       text-muted-foreground text-sm transition-all"
           >
             <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
             Go back
           </button>
         </div>
-
         <p className="text-[11px] text-muted-foreground/40 mt-6 leading-relaxed">
           Still stuck? Try clearing your browser cache.
         </p>
@@ -189,7 +180,7 @@ function SettingsErrorState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-// ─── Nav config ───────────────────────────────────────────────────────────────
+// Nav config
 const NAV_ITEMS = [
   { id: 'profile', label: 'Profile', icon: User },
   { id: 'payout', label: 'Payout', icon: CreditCard },
@@ -201,17 +192,15 @@ const NAV_ITEMS = [
 
 type SectionId = (typeof NAV_ITEMS)[number]['id'];
 
-// ─── Active-section tracker ───────────────────────────────────────────────────
+// Active section tracker
 function useActiveSection(ids: readonly string[]) {
   const [active, setActive] = useState<string>(ids[0]);
 
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
-
     ids.forEach((id) => {
       const el = document.getElementById(id);
       if (!el) return;
-
       const obs = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting) setActive(id);
@@ -221,14 +210,13 @@ function useActiveSection(ids: readonly string[]) {
       obs.observe(el);
       observers.push(obs);
     });
-
     return () => observers.forEach((o) => o.disconnect());
   }, [ids]);
 
   return active;
 }
 
-// ─── 1. PARENT — data fetcher ─────────────────────────────────────────────────
+// PARENT — data fetcher
 export function SettingsPage() {
   const { status } = useSession();
 
@@ -244,7 +232,6 @@ export function SettingsPage() {
   });
 
   if (isLoading || status === 'loading') return <SettingsSkeleton />;
-
   if (error || !backendProfile) {
     return <SettingsErrorState onRetry={() => window.location.reload()} />;
   }
@@ -252,7 +239,7 @@ export function SettingsPage() {
   return <SettingsForm backendProfile={backendProfile} />;
 }
 
-// ─── 2. CHILD — orchestrator ──────────────────────────────────────────────────
+// CHILD — orchestrator
 interface SettingsFormProps {
   backendProfile: UserProfile;
 }
@@ -264,29 +251,31 @@ function SettingsForm({ backendProfile }: SettingsFormProps) {
 
   const activeSection = useActiveSection(NAV_ITEMS.map((n) => n.id));
 
-  // ── Password fields ──────────────────────────────────────────────────────────
+  // Password state
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // ── Form state ───────────────────────────────────────────────────────────────
+  // Profile form state
   const [profileSettings, setProfileSettings] = useState<ProfileFormState>(
     () => ({
       fullName: backendProfile.full_name ?? '',
       email: backendProfile.email ?? '',
-      phoneNumber: backendProfile.momo_number ?? '',
+      // phoneNumber removed — it was momo_number, which now lives in PayoutSection
       digitalAddress: backendProfile.ghana_post_address ?? '',
       userType: backendProfile.user_type === 'student' ? 'Student' : 'Worker',
     }),
   );
 
+  // Payout form state
   const [payoutSettings, setPayoutSettings] = useState<PayoutFormState>(() => ({
     provider: (backendProfile.momo_provider as MomoProvider) ?? 'mtn',
     accountNumber: backendProfile.momo_number ?? '',
     accountName: backendProfile.momo_name ?? '',
   }));
 
+  // Notification / Security / Appearance state
   const [notificationSettings, setNotificationSettings] =
     useState<NotificationSettings>(() =>
       readLocalStorage(LS_KEY_NOTIFICATIONS, defaultNotifications()),
@@ -301,7 +290,7 @@ function SettingsForm({ backendProfile }: SettingsFormProps) {
       readLocalStorage(LS_KEY_APPEARANCE, defaultAppearance()),
     );
 
-  // ── Mutations ────────────────────────────────────────────────────────────────
+  // Profile mutation (identity fields only — never triggers OTP)
   const profileMutation = useMutation({
     mutationFn: (payload: ProfileUpdatePayload) =>
       authService.updateProfile(payload),
@@ -320,21 +309,7 @@ function SettingsForm({ backendProfile }: SettingsFormProps) {
     },
   });
 
-  const payoutMutation = useMutation({
-    mutationFn: (payload: ProfileUpdatePayload) =>
-      authService.updateProfile(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
-      setFeedback({ type: 'success', message: 'Payout account updated!' });
-    },
-    onError: (err: unknown) => {
-      setFeedback({
-        type: 'error',
-        message: extractApiError(err, 'Payout update failed.'),
-      });
-    },
-  });
-
+  // Password mutation
   const passwordMutation = useMutation({
     mutationFn: (payload: { current_password: string; new_password: string }) =>
       authService.changePassword(payload),
@@ -352,24 +327,15 @@ function SettingsForm({ backendProfile }: SettingsFormProps) {
     },
   });
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
+  // Handlers
   const handleSaveProfile = useCallback(() => {
     profileMutation.mutate({
       full_name: profileSettings.fullName,
       email: profileSettings.email,
-      momo_number: profileSettings.phoneNumber,
       ghana_post_address: profileSettings.digitalAddress,
       user_type: profileSettings.userType.toLowerCase() as 'student' | 'worker',
     });
   }, [profileMutation, profileSettings]);
-
-  const handleSavePayout = useCallback(() => {
-    payoutMutation.mutate({
-      momo_provider: payoutSettings.provider,
-      momo_number: payoutSettings.accountNumber,
-      momo_name: payoutSettings.accountName,
-    });
-  }, [payoutMutation, payoutSettings]);
 
   const handleSaveNotifications = useCallback(() => {
     localStorage.setItem(
@@ -419,13 +385,28 @@ function SettingsForm({ backendProfile }: SettingsFormProps) {
     setIsModalOpen(false);
   }, [router]);
 
+  const handlePayoutSuccess = useCallback(
+    (message: string) => {
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      setFeedback({ type: 'success', message });
+    },
+    [queryClient, setFeedback],
+  );
+
+  const handlePayoutError = useCallback(
+    (message: string) => {
+      setFeedback({ type: 'error', message });
+    },
+    [setFeedback],
+  );
+
   const scrollTo = (id: SectionId) => {
     document
       .getElementById(id)
       ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // ── Derived ───────────────────────────────────────────────────────────────────
+  //  Derived
   const initials = profileSettings.fullName
     .split(' ')
     .map((n) => n[0])
@@ -433,10 +414,10 @@ function SettingsForm({ backendProfile }: SettingsFormProps) {
     .toUpperCase()
     .slice(0, 2);
 
-  // ── Render ────────────────────────────────────────────────────────────────────
+  //  Render
   return (
     <>
-      {/* ── Page header ──────────────────────────────────────────────────────── */}
+      {/* Page header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
           Settings
@@ -446,17 +427,14 @@ function SettingsForm({ backendProfile }: SettingsFormProps) {
         </p>
       </div>
 
-      {/* ── Feedback banner ──────────────────────────────────────────────────── */}
+      {/* Feedback banner */}
       {feedback && (
         <div className="mb-6">
           <FeedbackBanner feedback={feedback} />
         </div>
       )}
 
-      {/* ── Mobile pill nav ───────────────────────────────────────────────────────
-           Must live OUTSIDE the flex row so it spans full width and sticky
-           positioning works correctly. The -mx-4 bleed + px-4 trick only works
-           when this element is a direct child of the padded content wrapper.    */}
+      {/* Mobile pill nav */}
       <div className="lg:hidden sticky top-0 z-20 -mx-4 px-0 mb-5 bg-background/90 backdrop-blur-md border-b border-border/40">
         <div className="flex gap-2 overflow-x-auto no-scrollbar px-4 py-2.5">
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
@@ -482,9 +460,9 @@ function SettingsForm({ backendProfile }: SettingsFormProps) {
         </div>
       </div>
 
-      {/* ── Two-column layout ─────────────────────────────────────────────────── */}
+      {/* Two-column layout */}
       <div className="flex gap-6 xl:gap-8 items-start">
-        {/* ── Sidebar ───────────────────────────────────────────────────────── */}
+        {/* Sidebar */}
         <aside className="hidden lg:flex flex-col gap-3 w-52 shrink-0 sticky top-6">
           {/* Avatar card */}
           <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-4 flex flex-col items-center gap-3 shadow-sm">
@@ -506,7 +484,6 @@ function SettingsForm({ backendProfile }: SettingsFormProps) {
                   </div>
                 )}
               </div>
-              {/* Online dot */}
               <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-card ring-1 ring-emerald-400/40" />
             </div>
             <div className="text-center min-w-0 w-full">
@@ -571,7 +548,7 @@ function SettingsForm({ backendProfile }: SettingsFormProps) {
           </nav>
         </aside>
 
-        {/* ── Main content ──────────────────────────────────────────────────── */}
+        {/* Main content */}
         <div className="flex-1 min-w-0 space-y-5 pb-24 lg:pb-0">
           <ProfileSection
             profileSettings={profileSettings}
@@ -583,8 +560,8 @@ function SettingsForm({ backendProfile }: SettingsFormProps) {
           <PayoutSection
             payoutSettings={payoutSettings}
             onPayoutChange={setPayoutSettings}
-            onSave={handleSavePayout}
-            isPending={payoutMutation.isPending}
+            onSuccess={handlePayoutSuccess}
+            onError={handlePayoutError}
           />
 
           <NotificationsSection
