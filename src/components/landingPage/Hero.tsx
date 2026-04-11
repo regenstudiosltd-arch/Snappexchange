@@ -118,9 +118,9 @@ export function Hero({ onNavigate }: HeroProps = {}) {
               <div className="hero-img-container">
                 <Image
                   // img 1
-                  src="https://media.istockphoto.com/id/2195380850/photo/black-hand-holding-various-denorminations-of-ghanaian-cedi-notes-isolated-on-green-background.jpg?s=612x612&w=0&k=20&c=GRE8XHr5iZ8MNNmGooZp6WXtfFbfmdL-lQvVyJ03SsE="
+                  // src="https://media.istockphoto.com/id/2195380850/photo/black-hand-holding-various-denorminations-of-ghanaian-cedi-notes-isolated-on-green-background.jpg?s=612x612&w=0&k=20&c=GRE8XHr5iZ8MNNmGooZp6WXtfFbfmdL-lQvVyJ03SsE="
                   // img 2
-                  // src="https://media.istockphoto.com/id/1369041786/photo/black-hands-holding-3d-rendered-200-ghanaian-cedi-notes-closeup-of-hands-holding-ghanaian.jpg?s=612x612&w=0&k=20&c=D2PlCC625Xdskqis9vve5XyPbm_vLDUvC3Ga7SRF4y0="
+                  src="https://media.istockphoto.com/id/1369041786/photo/black-hands-holding-3d-rendered-200-ghanaian-cedi-notes-closeup-of-hands-holding-ghanaian.jpg?s=612x612&w=0&k=20&c=D2PlCC625Xdskqis9vve5XyPbm_vLDUvC3Ga7SRF4y0="
                   alt="Community savings"
                   width={600}
                   height={600}
