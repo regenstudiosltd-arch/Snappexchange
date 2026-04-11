@@ -111,11 +111,27 @@ export type Goal = {
 };
 
 export type ProfileUpdatePayload = Partial<{
-  email?: string;
-  full_name?: string;
-  user_type?: 'student' | 'worker';
-  ghana_post_address?: string;
-  momo_provider?: 'mtn' | 'telecel' | 'airteltigo';
-  momo_number?: string;
-  momo_name?: string;
+  email: string;
+  full_name: string;
+  user_type: 'student' | 'worker';
+  ghana_post_address: string;
+  momo_provider: 'mtn' | 'telecel' | 'airteltigo';
+  momo_number: string;
+  momo_name: string;
+  otp_code: string;
 }>;
+
+export interface MomoOtpRequiredResponse {
+  next_step: 'verify_momo_change';
+  message: string;
+  phone: string;
+  masked_phone: string;
+}
+export interface ProfileUpdateSuccessResponse {
+  user: {
+    id: number;
+    email: string;
+    is_verified: boolean;
+  };
+  profile: UserProfile;
+}
