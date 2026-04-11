@@ -13,6 +13,7 @@ import { Textarea } from '@/src/components/ui/textarea';
 import { Group } from './types';
 import { formatContribution, isGroupFull } from './utils';
 import { GROUP_RULES } from './constants';
+import { decodeHtmlEntities } from '@/src/lib/html';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -58,6 +59,10 @@ export function GroupDetailView({
   const full = isGroupFull(group);
   const fillPercent = Math.round(
     (group.current_members / group.expected_members) * 100,
+  );
+
+  const description = decodeHtmlEntities(
+    group.description || 'No description provided.',
   );
 
   return (
@@ -123,7 +128,7 @@ export function GroupDetailView({
             About this group
           </h4>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            {group.description}
+            {description}
           </p>
         </div>
       )}
