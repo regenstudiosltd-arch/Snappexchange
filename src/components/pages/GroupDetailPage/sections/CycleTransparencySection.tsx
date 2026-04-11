@@ -206,7 +206,7 @@ export function CycleTransparencySection({
               variant="next"
             />
           ) : (
-            <EmptyRecipientCard message="Payout order not yet assigned — activate the group first" />
+            <EmptyRecipientCard message="Payout order not yet assigned. Activate the group first" />
           )}
 
           {group.previous_payout_recipient ? (
@@ -220,7 +220,7 @@ export function CycleTransparencySection({
             <EmptyRecipientCard
               message={
                 group.current_cycle_number === 1
-                  ? 'First cycle — no previous payout yet'
+                  ? 'First cycle. No previous payout yet'
                   : 'No previous payout data'
               }
             />
