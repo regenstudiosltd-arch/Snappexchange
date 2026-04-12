@@ -35,6 +35,15 @@ interface GoalFormModalProps {
   editingGoal?: Goal | null;
 }
 
+function getTomorrowDateString(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function GoalFormModal({
   open,
   onOpenChange,
@@ -43,6 +52,9 @@ export function GoalFormModal({
 }: GoalFormModalProps) {
   const isEdit = !!editingGoal;
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Computed once — stable for the lifetime of this modal instance.
+  const minTargetDate = getTomorrowDateString();
 
   const {
     register,
@@ -183,6 +195,7 @@ export function GoalFormModal({
               </Label>
               <Input
                 type="date"
+                min={minTargetDate}
                 {...register('target_date')}
                 className="h-11 bg-background"
               />
