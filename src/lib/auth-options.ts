@@ -1,5 +1,3 @@
-// src/lib/auth-options.ts
-
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { apiClient } from './axios';
@@ -29,6 +27,7 @@ declare module 'next-auth' {
     refreshToken: string;
     isVerified: boolean;
     accessTokenExpires?: number;
+    rememberMe?: boolean;
   }
 }
 
@@ -41,15 +40,18 @@ declare module 'next-auth/jwt' {
     name: string;
     image: string | null;
     error?: string;
+    rememberMe: boolean;
   }
 }
+
+//  helpers
 
 function getJwtExpiration(token: string): number {
   try {
     if (!token) return 0;
-    const payloadBase64 = token.split('.')[1];
-    const decodedJson = Buffer.from(payloadBase64, 'base64').toString();
-    const payload = JSON.parse(decodedJson);
+    const payload = JSON.parse(
+      Buffer.from(token.split('.')[1], 'base64').toString(),
+    );
     return payload.exp * 1000;
   } catch {
     return 0;
@@ -58,10 +60,10 @@ function getJwtExpiration(token: string): number {
 
 async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
-    const url = process.env.NEXT_PUBLIC_API_URL;
-    const response = await axios.post(`${url}/auth/token/refresh/`, {
-      refresh: token.refreshToken,
-    });
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/token/refresh/`,
+      { refresh: token.refreshToken },
+    );
 
     const { access, refresh } = response.data;
 
@@ -72,14 +74,15 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
       accessTokenExpires: getJwtExpiration(access),
       error: undefined,
     };
-  } catch (error) {
-    console.error('Error refreshing access token', error);
-    return {
-      ...token,
-      error: 'RefreshAccessTokenError',
-    };
+  } catch {
+    return { ...token, error: 'RefreshAccessTokenError' };
   }
 }
+
+const SESSION_MAX_AGE_REMEMBER = 60 * 60 * 24 * 365;
+const SESSION_MAX_AGE_DEFAULT = 60 * 60 * 24 * 30;
+
+//  authOptions
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -92,10 +95,12 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
+          const rememberMe = credentials?.remember_me === 'true';
+
           const res = await apiClient.post('/auth/login/', {
             login_field: credentials?.login_field,
             password: credentials?.password,
-            remember_me: credentials?.remember_me === 'true',
+            remember_me: rememberMe,
           });
 
           const { access, refresh } = res.data;
@@ -104,11 +109,10 @@ export const authOptions: NextAuthOptions = {
             headers: { Authorization: `Bearer ${access}` },
           });
 
-          const userProfile = meRes.data.user;
-          const profile = meRes.data.profile;
+          const { user: userProfile, profile } = meRes.data;
 
           return {
-            id: userProfile.id,
+            id: String(userProfile.id),
             email: userProfile.email,
             name: profile.full_name,
             image: profile.profile_picture || null,
@@ -116,19 +120,19 @@ export const authOptions: NextAuthOptions = {
             accessToken: access,
             refreshToken: refresh,
             accessTokenExpires: getJwtExpiration(access),
+            rememberMe,
           };
         } catch (error: unknown) {
           if (axios.isAxiosError(error)) {
             const data = error.response?.data as { detail?: string };
-            const errorMessage =
-              data?.detail || error.message || 'Login failed';
-            throw new Error(errorMessage);
+            throw new Error(data?.detail || error.message || 'Login failed');
           }
           throw new Error('An unexpected error occurred during login');
         }
       },
     }),
   ],
+
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
@@ -140,7 +144,8 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           accessTokenExpires:
-            user.accessTokenExpires || getJwtExpiration(user.accessToken),
+            user.accessTokenExpires ?? getJwtExpiration(user.accessToken),
+          rememberMe: user.rememberMe ?? false,
         };
       }
 
@@ -148,8 +153,9 @@ export const authOptions: NextAuthOptions = {
         return token;
       }
 
-      return await refreshAccessToken(token);
+      return refreshAccessToken(token);
     },
+
     async session({ session, token }) {
       if (session.user) {
         session.user.accessToken = token.accessToken;
@@ -162,10 +168,18 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
+
+  session: {
+    strategy: 'jwt',
+    maxAge: SESSION_MAX_AGE_REMEMBER,
+    updateAge: 60 * 60 * 24,
+  },
+
   pages: {
     signIn: '/login',
   },
-  session: {
-    strategy: 'jwt',
+
+  jwt: {
+    maxAge: SESSION_MAX_AGE_REMEMBER,
   },
 };
