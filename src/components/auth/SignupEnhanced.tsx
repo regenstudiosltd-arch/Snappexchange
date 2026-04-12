@@ -60,6 +60,47 @@ const STEPS = [
   { number: 4, label: 'Security' },
 ] as const;
 
+// Profile picture constraints
+const MAX_PROFILE_PICTURE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png'] as const;
+const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png'] as const;
+
+type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];
+
+const MIN_AGE_YEARS = 13;
+function getMinAgeMaxDate(): string {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - MIN_AGE_YEARS);
+  // Use local calendar values to avoid UTC-midnight-shift issues.
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function validateProfilePicture(file: File): string | null {
+  const ext = '.' + file.name.split('.').pop()?.toLowerCase();
+
+  if (
+    !ALLOWED_IMAGE_EXTENSIONS.includes(
+      ext as (typeof ALLOWED_IMAGE_EXTENSIONS)[number],
+    )
+  ) {
+    return 'Only JPG and PNG images are allowed.';
+  }
+
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type as AllowedImageType)) {
+    return 'Only JPG and PNG images are allowed.';
+  }
+
+  if (file.size > MAX_PROFILE_PICTURE_BYTES) {
+    const mb = (file.size / (1024 * 1024)).toFixed(1);
+    return `Image is too large (${mb} MB). Maximum allowed size is 5 MB.`;
+  }
+
+  return null;
+}
+
 function PasswordStrengthBar({ password }: { password: string }) {
   const checks = [
     password.length >= 8,
@@ -210,8 +251,14 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
   const [step, setStep] = useState(1);
   const [profilePreview, setProfilePreview] = useState<string | null>(null);
+  const [profilePictureError, setProfilePictureError] = useState<string | null>(
+    null,
+  );
   const [showCamera, setShowCamera] = useState(false);
   const [animKey, setAnimKey] = useState(0);
+
+  // Computed once on mount — stable for the lifetime of the form.
+  const dobMaxDate = getMinAgeMaxDate();
 
   const {
     register,
@@ -244,26 +291,54 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
 
   const isSubmitDisabled = signupMutation.isPending || !agreeToTerms;
 
+  /**
+   * Handles file input changes for profile picture uploads.
+   */
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
+
     if (!file) return;
+
+    const validationError = validateProfilePicture(file);
+    if (validationError) {
+      setProfilePictureError(validationError);
+      return;
+    }
+
+    setProfilePictureError(null);
     setValue('profilePicture', file, { shouldValidate: true });
+
     const reader = new FileReader();
     reader.onloadend = () => setProfilePreview(reader.result as string);
     reader.readAsDataURL(file);
   };
 
+  /**
+   * Handles images captured via the live camera.
+   */
   const handleCapture = (imgBase64: string | null) => {
     if (!imgBase64) return;
-    setProfilePreview(imgBase64);
+
     fetch(imgBase64)
       .then((r) => r.blob())
       .then((blob) => {
         const file = new File([blob], 'profile_capture.jpg', {
           type: 'image/jpeg',
         });
+
+        const validationError = validateProfilePicture(file);
+        if (validationError) {
+          setProfilePictureError(validationError);
+          setShowCamera(false);
+          return;
+        }
+
+        setProfilePictureError(null);
+        setProfilePreview(imgBase64);
         setValue('profilePicture', file, { shouldValidate: true });
       });
+
     setShowCamera(false);
   };
 
@@ -376,10 +451,12 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
                     id="dateOfBirth"
                     label="Date of Birth"
                     type="date"
+                    max={dobMaxDate}
                     icon={Calendar}
                     error={errors.dateOfBirth?.message}
                     {...register('dateOfBirth')}
                   />
+
                   <Controller
                     control={control}
                     name="userType"
@@ -444,7 +521,10 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
                   {/* Profile Picture */}
                   <div className="space-y-2">
                     <Label className="block text-gray-500 dark:text-white/45 text-[10.5px] font-bold uppercase tracking-[0.15em]">
-                      Profile Picture
+                      Profile Picture{' '}
+                      <span className="normal-case font-normal text-gray-400 dark:text-white/25">
+                        (optional · JPG or PNG · max 5 MB)
+                      </span>
                     </Label>
 
                     {profilePreview && (
@@ -460,6 +540,17 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
                       </div>
                     )}
 
+                    {profilePictureError && (
+                      <div
+                        className="flex items-start gap-2 rounded-xl border px-3.5 py-2.5 text-[12.5px]
+                          border-red-200 bg-red-50/80 text-red-600
+                          dark:border-red-500/20 dark:bg-red-500/8 dark:text-red-400"
+                      >
+                        <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                        {profilePictureError}
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-3">
                       <label
                         className="flex flex-col items-center justify-center gap-2 h-20 rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200
@@ -471,7 +562,7 @@ export function SignupEnhanced({ onComplete }: SignupEnhancedProps) {
                         <span className="text-[12px] font-medium">Upload</span>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                           onChange={handleFileChange}
                           className="hidden"
                         />
