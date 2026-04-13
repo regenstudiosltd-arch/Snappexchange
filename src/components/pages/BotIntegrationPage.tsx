@@ -2,145 +2,92 @@
 
 'use client';
 
-import { Smartphone, MessageCircle } from 'lucide-react';
 import { BotHeroBanner } from '../bot-integration/Botherobanner';
 import { PlatformSetupCard } from '../bot-integration/Platformsetupcard';
 import { BotCapabilities } from '../bot-integration/BotCapabilities';
 import { ConnectedGroupsPanel } from '../bot-integration/Connectedgroupspanel';
 import { useBotIntegration } from '@/src/hooks/useBotIntegration';
 
-const BOT_NUMBER = '0500581423';
-const TELEGRAM_USERNAME = '@SnappXBot';
-
-const WHATSAPP_STEPS = (botNumber: string) => [
-  {
-    num: 1,
-    title: 'Save the bot number',
-    body: (
-      <p>
-        Add <strong>{botNumber}</strong> to your contacts as <em>SnappX Bot</em>
-        .
-      </p>
-    ),
-  },
-  {
-    num: 2,
-    title: 'Add the bot to your WhatsApp group',
-    body: <p>Open your savings group, tap Participants → Add participant.</p>,
-  },
-  {
-    num: 3,
-    title: 'Activate with a command',
-    body: (
-      <p>
-        Send <code className="bot-code">!join</code> in the group chat. The bot
-        will reply with a unique link code.
-      </p>
-    ),
-  },
-  {
-    num: 4,
-    title: 'Paste the link code below',
-    body: <p>Enter the code sent by the bot to connect your SnappX group.</p>,
-  },
-];
-
-const TELEGRAM_STEPS = (username: string) => [
-  {
-    num: 1,
-    title: 'Search for the bot',
-    body: (
-      <p>
-        Open Telegram and search for <strong>{username}</strong>, then tap
-        Start.
-      </p>
-    ),
-  },
-  {
-    num: 2,
-    title: 'Add the bot to your group',
-    body: <p>Go to your savings group → Add Members → search SnappXBot.</p>,
-  },
-  {
-    num: 3,
-    title: 'Grant admin permissions',
-    body: <p>Make the bot an admin so it can post announcements.</p>,
-  },
-  {
-    num: 4,
-    title: 'Activate & get your code',
-    body: (
-      <p>
-        Send <code className="bot-code">/start</code> — the bot will reply with
-        your link code.
-      </p>
-    ),
-  },
-];
-
 export function BotIntegrationPage() {
   const {
     linkCode,
     connectionStatus,
+    linkError,
     copied,
     connectedGroups,
     groupsLoading,
+    adminGroups,
+    adminGroupsLoading,
     unlinkTarget,
-    linkError,
+    generatedCode,
+    codeGenerating,
+    selectedGroup,
     copyToClipboard,
+    handleGenerateCode,
     handleLinkGroup,
-    handleUnlink,
     updateLinkCode,
     setUnlinkTarget,
+    selectGroup,
+    handleUnlink,
     refetchGroups,
   } = useBotIntegration();
 
   return (
     <div className="bot-page">
-      {/* ── Hero ── */}
       <BotHeroBanner />
 
-      {/* ── Platform setup cards (side by side on desktop) ── */}
       <div className="bot-page__platforms">
         <PlatformSetupCard
           platform="whatsapp"
           platformLabel="WhatsApp"
-          contactValue={BOT_NUMBER}
-          contactLabel="Bot Number"
-          steps={WHATSAPP_STEPS(BOT_NUMBER)}
-          accentColor="green"
-          icon={<Smartphone size={20} className="bot-icon bot-icon--wa" />}
+          adminGroups={adminGroups}
+          adminGroupsLoading={adminGroupsLoading}
+          selectedGroup={selectedGroup.whatsapp}
+          onSelectGroup={(g) => selectGroup('whatsapp', g)}
+          generatedCode={generatedCode.whatsapp}
+          codeGenerating={codeGenerating.whatsapp}
+          onGenerateCode={() => handleGenerateCode('whatsapp')}
+          onCopyCode={() =>
+            generatedCode.whatsapp &&
+            copyToClipboard(generatedCode.whatsapp.link_code, 'whatsapp-code')
+          }
+          codeCopied={!!copied['whatsapp-code']}
           linkCode={linkCode.whatsapp}
           connectionStatus={connectionStatus.whatsapp}
-          copied={!!copied['whatsapp']}
-          onCopy={() => copyToClipboard(BOT_NUMBER, 'whatsapp')}
           onLinkCodeChange={(v) => updateLinkCode('whatsapp', v)}
           onLinkGroup={() => handleLinkGroup('whatsapp')}
-          linkError={connectionStatus.whatsapp === 'error' ? linkError : null}
+          linkError={
+            connectionStatus.whatsapp === 'error' ? linkError.whatsapp : null
+          }
         />
 
         <PlatformSetupCard
           platform="telegram"
           platformLabel="Telegram"
-          contactValue={TELEGRAM_USERNAME}
-          contactLabel="Bot Username"
-          steps={TELEGRAM_STEPS(TELEGRAM_USERNAME)}
-          accentColor="sky"
-          icon={<MessageCircle size={20} className="bot-icon bot-icon--tg" />}
+          adminGroups={adminGroups}
+          adminGroupsLoading={adminGroupsLoading}
+          selectedGroup={selectedGroup.telegram}
+          onSelectGroup={(g) => selectGroup('telegram', g)}
+          generatedCode={generatedCode.telegram}
+          codeGenerating={codeGenerating.telegram}
+          onGenerateCode={() => handleGenerateCode('telegram')}
+          onCopyCode={() =>
+            generatedCode.telegram &&
+            copyToClipboard(generatedCode.telegram.link_code, 'telegram-code')
+          }
+          codeCopied={!!copied['telegram-code']}
           linkCode={linkCode.telegram}
           connectionStatus={connectionStatus.telegram}
-          copied={!!copied['telegram']}
-          onCopy={() => copyToClipboard(TELEGRAM_USERNAME, 'telegram')}
           onLinkCodeChange={(v) => updateLinkCode('telegram', v)}
           onLinkGroup={() => handleLinkGroup('telegram')}
-          linkError={connectionStatus.telegram === 'error' ? linkError : null}
+          linkError={
+            connectionStatus.telegram === 'error' ? linkError.telegram : null
+          }
         />
       </div>
 
-      {/* ── Capabilities ── */}
       <BotCapabilities />
 
-      {/* ── Connected groups ── */}
       <ConnectedGroupsPanel
         groups={connectedGroups}
         isLoading={groupsLoading}
@@ -152,6 +99,167 @@ export function BotIntegrationPage() {
     </div>
   );
 }
+
+// // src/components/pages/BotIntegrationPage.tsx
+
+// 'use client';
+
+// import { Smartphone, MessageCircle } from 'lucide-react';
+// import { BotHeroBanner } from '../bot-integration/Botherobanner';
+// import { PlatformSetupCard } from '../bot-integration/Platformsetupcard';
+// import { BotCapabilities } from '../bot-integration/BotCapabilities';
+// import { ConnectedGroupsPanel } from '../bot-integration/Connectedgroupspanel';
+// import { useBotIntegration } from '@/src/hooks/useBotIntegration';
+
+// const BOT_NUMBER = '0500581423';
+// const TELEGRAM_USERNAME = '@SnappXBot';
+
+// const WHATSAPP_STEPS = (botNumber: string) => [
+//   {
+//     num: 1,
+//     title: 'Save the bot number',
+//     body: (
+//       <p>
+//         Add <strong>{botNumber}</strong> to your contacts as <em>SnappX Bot</em>
+//         .
+//       </p>
+//     ),
+//   },
+//   {
+//     num: 2,
+//     title: 'Add the bot to your WhatsApp group',
+//     body: <p>Open your savings group, tap Participants → Add participant.</p>,
+//   },
+//   {
+//     num: 3,
+//     title: 'Activate with a command',
+//     body: (
+//       <p>
+//         Send <code className="bot-code">!join</code> in the group chat. The bot
+//         will reply with a unique link code.
+//       </p>
+//     ),
+//   },
+//   {
+//     num: 4,
+//     title: 'Paste the link code below',
+//     body: <p>Enter the code sent by the bot to connect your SnappX group.</p>,
+//   },
+// ];
+
+// const TELEGRAM_STEPS = (username: string) => [
+//   {
+//     num: 1,
+//     title: 'Search for the bot',
+//     body: (
+//       <p>
+//         Open Telegram and search for <strong>{username}</strong>, then tap
+//         Start.
+//       </p>
+//     ),
+//   },
+//   {
+//     num: 2,
+//     title: 'Add the bot to your group',
+//     body: <p>Go to your savings group → Add Members → search SnappXBot.</p>,
+//   },
+//   {
+//     num: 3,
+//     title: 'Grant admin permissions',
+//     body: <p>Make the bot an admin so it can post announcements.</p>,
+//   },
+//   {
+//     num: 4,
+//     title: 'Activate & get your code',
+//     body: (
+//       <p>
+//         Send <code className="bot-code">/start</code> — the bot will reply with
+//         your link code.
+//       </p>
+//     ),
+//   },
+// ];
+
+// export function BotIntegrationPage() {
+//   const {
+//     linkCode,
+//     connectionStatus,
+//     copied,
+//     connectedGroups,
+//     groupsLoading,
+//     unlinkTarget,
+//     linkError,
+//     copyToClipboard,
+//     handleLinkGroup,
+//     handleUnlink,
+//     updateLinkCode,
+//     setUnlinkTarget,
+//     refetchGroups,
+//   } = useBotIntegration();
+
+//   return (
+//     <div className="bot-page">
+//       {/* ── Hero ── */}
+//       <BotHeroBanner />
+
+//       {/* ── Platform setup cards (side by side on desktop) ── */}
+//       <div className="bot-page__platforms">
+//         <PlatformSetupCard
+//           platform="whatsapp"
+//           platformLabel="WhatsApp"
+//           contactValue={BOT_NUMBER}
+//           contactLabel="Bot Number"
+//           steps={WHATSAPP_STEPS(BOT_NUMBER)}
+//           accentColor="green"
+//           icon={<Smartphone size={20} className="bot-icon bot-icon--wa" />}
+//           linkCode={linkCode.whatsapp}
+//           connectionStatus={connectionStatus.whatsapp}
+//           copied={!!copied['whatsapp']}
+//           onCopy={() => copyToClipboard(BOT_NUMBER, 'whatsapp')}
+//           onLinkCodeChange={(v) => updateLinkCode('whatsapp', v)}
+//           onLinkGroup={() => handleLinkGroup('whatsapp')}
+//           // linkError={connectionStatus.whatsapp === 'error' ? linkError : null}
+//           linkError={
+//             connectionStatus.whatsapp === 'error' ? linkError.whatsapp : null
+//           }
+//         />
+
+//         <PlatformSetupCard
+//           platform="telegram"
+//           platformLabel="Telegram"
+//           contactValue={TELEGRAM_USERNAME}
+//           contactLabel="Bot Username"
+//           steps={TELEGRAM_STEPS(TELEGRAM_USERNAME)}
+//           accentColor="sky"
+//           icon={<MessageCircle size={20} className="bot-icon bot-icon--tg" />}
+//           linkCode={linkCode.telegram}
+//           connectionStatus={connectionStatus.telegram}
+//           copied={!!copied['telegram']}
+//           onCopy={() => copyToClipboard(TELEGRAM_USERNAME, 'telegram')}
+//           onLinkCodeChange={(v) => updateLinkCode('telegram', v)}
+//           onLinkGroup={() => handleLinkGroup('telegram')}
+//           // linkError={connectionStatus.telegram === 'error' ? linkError : null}
+//           linkError={
+//             connectionStatus.telegram === 'error' ? linkError.telegram : null
+//           }
+//         />
+//       </div>
+
+//       {/* ── Capabilities ── */}
+//       <BotCapabilities />
+
+//       {/* ── Connected groups ── */}
+//       <ConnectedGroupsPanel
+//         groups={connectedGroups}
+//         isLoading={groupsLoading}
+//         onUnlink={handleUnlink}
+//         onRefresh={refetchGroups}
+//         unlinkTarget={unlinkTarget}
+//         onSetUnlinkTarget={setUnlinkTarget}
+//       />
+//     </div>
+//   );
+// }
 
 // // src/components/pages/BotIntegrationPage.tsx
 
