@@ -33,7 +33,7 @@ const menuItems = [
     page: 'AI Assistant',
     color: '#0A9B8E',
   },
-  { icon: Bot, label: 'Bot', page: 'Bot Integration', color: '#C8A96E' },
+  // { icon: Bot, label: 'Bot', page: 'Bot Integration', color: '#C8A96E' },
   { icon: TrendingUp, label: 'Analytics', page: 'Analytics', color: '#0A9B8E' },
   { icon: Settings, label: 'Settings', page: 'Settings', color: '#C8A96E' },
 ];

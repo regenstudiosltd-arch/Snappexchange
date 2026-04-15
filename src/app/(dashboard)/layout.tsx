@@ -36,7 +36,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       groups: 'Groups',
       requests: 'Requests',
       'ai-assistant': 'AI Assistant',
-      'bot-integration': 'Bot Integration',
+      // 'bot-integration': 'Bot Integration',
       analytics: 'Analytics',
       settings: 'Settings',
     };
