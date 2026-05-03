@@ -173,7 +173,7 @@ Open [http://localhost:3000](http://localhost:3000)
 
 Contributions, issues, and feature requests are welcome.
 
-Feel free to check the [issues page](https://github.com/your-username/snappx-frontend/issues).
+Feel free to check the [issues page](https://github.com/regenstudiosltd-arch/Snappexchange/issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
